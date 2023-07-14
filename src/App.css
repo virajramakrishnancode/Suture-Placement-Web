@@ -25,10 +25,9 @@
 }
 
 .Clicking-div {
-  display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
+  width: '1000px';
 }
 
 .App-link {
@@ -37,8 +36,8 @@
 
 .point {
   position: absolute;
-  width: 10px;
-  height: 10px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background-color: red;
 }

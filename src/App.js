@@ -4,12 +4,16 @@ import React, { useState, useRef } from 'react';
 function App() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [points, setPoints] = useState([]);
-  const imageRef = useRef(null);
+  const scaleRef = useRef(null);
+  const traceRef = useRef(null); 
   const [savedPoints, setSavedPoints] = useState(null);
   const [inputValue1, setInputValue1] = useState('');
   const [inputValue2, setInputValue2] = useState('');
   const [submittedValue1, setSubmittedValue1] = useState('');
   const [submittedValue2, setSubmittedValue2] = useState('');
+
+  const [tracePoints, setTracePoints] = useState([]);
+  const [savedTrace, setSavedTrace] = useState(null);
 
   const handleInputChange1 = (event) => {
     setInputValue1(event.target.value);
@@ -43,25 +47,39 @@ function App() {
     }
   };
 
-  const handleImageClick = (event) => {
-    const { top: containerTop, left: containerLeft } = imageRef.current.getBoundingClientRect();
-    const { clientX, clientY } = event;
+  const handleImageClick = (event, isTracing) => {
+    let top, left;
+    if (isTracing) {
+      ({ top, left } = traceRef.current.getBoundingClientRect());
+    } else {
+      ({ top, left } = scaleRef.current.getBoundingClientRect());
+    }
+    
+    const { clientX, clientY, pageX, pageY } = event;
     const newPoint = {
-      x: clientX - containerLeft,
-      y: clientY - containerTop,
+      x: pageX - left - window.scrollX,
+      y: pageY - top - window.scrollY,
       displayX: clientX + window.scrollX,
       displayY: clientY + window.scrollY
     };
 
-    if (points.length < 2) {
-      setPoints((prevPoints) => [...prevPoints, newPoint]);
+    if (isTracing) {
+      setTracePoints((prevPoints) => [...prevPoints, newPoint]);
     } else {
-      setPoints((prevPoints) => [prevPoints[1], newPoint]);
+      if (points.length < 2) {
+        setPoints((prevPoints) => [...prevPoints, newPoint]);
+      } else {
+        setPoints((prevPoints) => [prevPoints[1], newPoint]);
+      }
     }
   };
 
   const handleSavePoints = () => {
     setSavedPoints([...points]);
+  };
+
+  const handleSaveTrace = () => {
+    setSavedTrace([...tracePoints]);
   };
 
   return (
@@ -85,13 +103,13 @@ function App() {
         Please click two points a known distance apart!
       </p>
 
-      <div className='Clicking-div' ref={imageRef}>
+      <div className='Clicking-div' ref={scaleRef}>
         {
           selectedImage && <img 
             src={selectedImage} 
             alt="Selected Image" 
             style={{ width: '1000px', height: 'auto' }}
-            onClick={handleImageClick}
+            onClick={(event) => handleImageClick(event, false)}
           />
         }
         {points.map((point, index) => (
@@ -144,8 +162,40 @@ function App() {
       </form>
       {submittedValue1 && <p>Value 1: {submittedValue1}</p>}
       {submittedValue2 && <p>Value 2: {submittedValue2}</p>}
+
+      <h1>Trace Suture</h1>
+      <div className='Clicking-div' ref={traceRef}>
+        {
+          selectedImage && <img 
+            src={selectedImage} 
+            alt="Selected" 
+            style={{ width: '1000px', height: 'auto' }}
+            onClick={(event) => handleImageClick(event, true)}
+          />
+        }
+        {tracePoints.map((point, index) => (
+            <div
+              key={index}
+              className="point"
+              style={{ left: point.displayX, top: point.displayY}}
+            />
+          ))
+        }
+      </div>
+      <button onClick={handleSaveTrace}>Done</button>
+      {savedTrace && (
+        <div>
+          <h2>Saved Trace Points:</h2>
+          <ul>
+            {savedTrace.map((point, index) => (
+              <li key={index}>
+                Point {index + 1}: ({point.x}, {point.y})
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </>
-     
   );
 }
 
