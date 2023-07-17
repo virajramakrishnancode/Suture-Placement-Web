@@ -6,6 +6,7 @@ function App() {
   const [points, setPoints] = useState([]);
   const scaleRef = useRef(null);
   const traceRef = useRef(null); 
+  const outputRef = useRef(null);  
   const [savedPoints, setSavedPoints] = useState(null);
   const [inputValues, setInputValues] = useState({
     suture_width: '',
@@ -15,6 +16,10 @@ function App() {
   const [tracePoints, setTracePoints] = useState([]);
   const [savedTrace, setSavedTrace] = useState(null);
 
+  const [insertionPoints, setInsertionPoints] = useState([]);
+  const [centerPoints, setCenterPoints] = useState([]);
+  const [extractionPoints, setExtractionPoints] = useState([]);
+
   const handleScaleInputChange = (event) => {
     const { name, value } = event.target;
     setInputValues((prevFormData) => ({
@@ -23,34 +28,8 @@ function App() {
     }));
   }
 
-  const handleFormSubmit = async (event) => {
+  const handleFormSubmit = (event) => {
     event.preventDefault();
-
-    try {
-
-      const requestData = {
-        inputValues: inputValues,
-        savedPoints: savedPoints
-      };
-      const response = await fetch('http://localhost:8000/get_wound_parameters', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestData)
-      });
-
-      const data = await response.json();
-      console.log('Response:', data);
-      // Process the response data as needed
-    } catch (error) {
-      console.error('Error:', error);
-    }
-
-    setInputValues({
-      suture_width: '',
-      length: ''
-    });
 
   };
 
@@ -100,8 +79,58 @@ function App() {
 
   };
 
-  const handleSaveTrace = () => {
+  const handleSaveTrace = async () => {
     setSavedTrace([...tracePoints]);
+
+    try {
+
+      const requestData = {
+        scaleValues: inputValues,
+        savedPoints: savedPoints,
+        tracePoints: tracePoints
+      };
+      const response = await fetch('http://localhost:8000/get_wound_parameters', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+      });
+
+      const data = await response.json();
+      console.log('Response:', data);
+
+      // process response - need to get the scroll and set output points accordingly
+      let top, left;
+      ({ top, left } = outputRef.current.getBoundingClientRect())
+
+      console.log(top);
+
+      const convertToPoint = (point) => {
+        const newPoint = {
+          x: point[0],
+          y: point[1],
+          displayX: point[0] + left + window.scrollX,
+          displayY: point[1] + top + window.scrollY
+        };
+
+        return newPoint;
+      }
+
+      let insertPointData = data['insertion_points'].map(convertToPoint);
+      let extractPointData = data['extraction_points'].map(convertToPoint);
+      let centerPointData = data['center_points'].map(convertToPoint);
+
+      console.log(insertPointData)
+
+      setCenterPoints([...centerPointData])
+      setInsertionPoints([...insertPointData])
+      setExtractionPoints([...extractPointData])
+
+    } catch (error) {
+      console.error('Error:', error);
+    }
+    
   };
 
   return (
@@ -222,6 +251,44 @@ function App() {
           </ul>
         </div>
       )}
+
+      <h1> Results </h1>
+      <div className='Output-div' ref={outputRef}>
+        {
+          selectedImage && <img 
+            src={selectedImage} 
+            alt="Selected Image" 
+            style={{ width: '1000px', height: 'auto' }}
+          />
+        }
+        {centerPoints.map((point, index) => (
+            <div
+              key={index}
+              className="green_point"
+              style={{ left: point.displayX, top: point.displayY}}
+            />
+          ))
+        }
+
+        {insertionPoints.map((point, index) => (
+            <div
+              key={index}
+              className="blue_point"
+              style={{ left: point.displayX, top: point.displayY}}
+            />
+          ))
+        }
+
+        {extractionPoints.map((point, index) => (
+            <div
+              key={index}
+              className="point"
+              style={{ left: point.displayX, top: point.displayY}}
+            />
+          ))
+        }
+
+      </div>
     </>
   );
 }

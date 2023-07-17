@@ -30,6 +30,12 @@
   width: '1000px';
 }
 
+.Output-div {
+  align-items: center;
+  justify-content: center;
+  width: '1000px';
+}
+
 .App-link {
   color: #61dafb;
 }
@@ -40,6 +46,22 @@
   height: 5px;
   border-radius: 50%;
   background-color: red;
+}
+
+.green_point {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: green;
+}
+
+.blue_point {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: blue;
 }
 
 @keyframes App-logo-spin {
