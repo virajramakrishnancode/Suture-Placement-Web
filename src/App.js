@@ -7,30 +7,51 @@ function App() {
   const scaleRef = useRef(null);
   const traceRef = useRef(null); 
   const [savedPoints, setSavedPoints] = useState(null);
-  const [inputValue1, setInputValue1] = useState('');
-  const [inputValue2, setInputValue2] = useState('');
-  const [submittedValue1, setSubmittedValue1] = useState('');
-  const [submittedValue2, setSubmittedValue2] = useState('');
+  const [inputValues, setInputValues] = useState({
+    suture_width: '',
+    length: ''
+  })
 
   const [tracePoints, setTracePoints] = useState([]);
   const [savedTrace, setSavedTrace] = useState(null);
 
-  const handleInputChange1 = (event) => {
-    setInputValue1(event.target.value);
-  };
+  const handleScaleInputChange = (event) => {
+    const { name, value } = event.target;
+    setInputValues((prevFormData) => ({
+      ...prevFormData,
+      [name]: value
+    }));
+  }
 
-  const handleInputChange2 = (event) => {
-    setInputValue2(event.target.value);
-  };
-
-  const handleFormSubmit = (event) => {
+  const handleFormSubmit = async (event) => {
     event.preventDefault();
 
-    setSubmittedValue1(parseFloat(inputValue1));
-    setSubmittedValue2(parseFloat(inputValue2));
+    try {
 
-    setInputValue1('');
-    setInputValue2('');
+      const requestData = {
+        inputValues: inputValues,
+        savedPoints: savedPoints
+      };
+      const response = await fetch('http://localhost:8000/get_wound_parameters', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+      });
+
+      const data = await response.json();
+      console.log('Response:', data);
+      // Process the response data as needed
+    } catch (error) {
+      console.error('Error:', error);
+    }
+
+    setInputValues({
+      suture_width: '',
+      length: ''
+    });
+
   };
 
 
@@ -76,6 +97,7 @@ function App() {
 
   const handleSavePoints = () => {
     setSavedPoints([...points]);
+
   };
 
   const handleSaveTrace = () => {
@@ -118,8 +140,11 @@ function App() {
               className="point"
               style={{ left: point.displayX, top: point.displayY}}
             />
-          ))}
+          ))
+        }
       </div>
+
+
       {points.length > 0 && (
         <div>
           <p>Point 1: ({points[0].x}, {points[0].y})</p>
@@ -146,22 +171,24 @@ function App() {
       <form onSubmit={handleFormSubmit}>
         <input
           type="number"
-          value={inputValue1}
-          onChange={handleInputChange1}
+          name='length'
+          value={inputValues.length}
+          onChange={handleScaleInputChange}
           placeholder="point dist (mm)"
         />
         <br />
         <input
           type="number"
-          value={inputValue2}
-          onChange={handleInputChange2}
+          name='suture_width'
+          value={inputValues.suture_width}
+          onChange={handleScaleInputChange}
           placeholder="suture width (mm)"
         />
         <br />
         <button type="submit">Submit</button>
       </form>
-      {submittedValue1 && <p>Value 1: {submittedValue1}</p>}
-      {submittedValue2 && <p>Value 2: {submittedValue2}</p>}
+      {inputValues.length && <p>Length: {inputValues.length}</p>}
+      {inputValues.suture_width && <p>Suture Width: {inputValues.suture_width}</p>}
 
       <h1>Trace Suture</h1>
       <div className='Clicking-div' ref={traceRef}>
