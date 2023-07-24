@@ -20,6 +20,44 @@ function App() {
   const [centerPoints, setCenterPoints] = useState([]);
   const [extractionPoints, setExtractionPoints] = useState([]);
 
+  const [sliderValue, setSliderValue] = useState(5);
+
+  const [idealDist, setIdealDist] = useState(5);
+
+  // code for dragging scale disk
+
+  const [isDragging, setIsDragging] = useState(false);
+  const [position, setPosition] = useState({ x: 150, y: 150 });
+  const circleRef = useRef();
+
+  const handleMouseDown = (event) => {
+    setIsDragging(true);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseMove = (event) => {
+    if (!isDragging) return;
+
+    const { clientX, clientY } = event;
+    const circleRect = circleRef.current.getBoundingClientRect();
+
+    const offsetX = clientX - circleRect.left;
+    const offsetY = clientY - circleRect.top;
+
+    setPosition({ x: offsetX, y: offsetY });
+  };
+
+  const handleIdealDist = (event) => {
+    setIdealDist(parseInt(event.target.value));
+  };
+
+  const handleSliderChange = (event) => {
+    setSliderValue(parseInt(event.target.value));
+  };
+
   const handleScaleInputChange = (event) => {
     const { name, value } = event.target;
     setInputValues((prevFormData) => ({
@@ -151,40 +189,25 @@ function App() {
         Scale Measurement
       </h1>
       <p>
-        Please click two points a known distance apart!
+        Please resize and drag the disk so that its diameter is ideally how far away two sutures should be!
       </p>
 
+      <div>
+        <input
+            type="range"
+            min="0"
+            max="10"
+            value={idealDist}
+            onChange={handleIdealDist}
+          />
+        <p>Ideal distance between sutures</p>
+      </div>
+
       <div className='container'>
-        <div className='Clicking-div' ref={scaleRef}>
-          {
-            selectedImage && <img 
-              src={selectedImage} 
-              alt="Selected Image" 
-              style={{ width: '1000px', height: 'auto' }}
-              onClick={(event) => handleImageClick(event, false)}
-            />
-          }
-          {points.map((point, index) => (
-              <div
-                key={index}
-                className="point"
-                style={{ left: point.displayX, top: point.displayY}}
-              />
-            ))
-          }
-        </div>
+
 
       </div>
 
-
-      {points.length > 0 && (
-        <div>
-          <p>Point 1: ({points[0].x}, {points[0].y})</p>
-          {points.length === 2 && (
-            <p>Point 2: ({points[1].x}, {points[1].y})</p>
-          )}
-        </div>
-      )}
       <button onClick={handleSavePoints}>Done</button>
       {savedPoints && (
         <div>
@@ -219,28 +242,38 @@ function App() {
         <br />
         <button type="submit">Submit</button>
       </form>
+      <div>
+        <input
+            type="range"
+            min="0"
+            max="10"
+            value={sliderValue}
+            onChange={handleSliderChange}
+          />
+        <p>Suture Width (mm): {sliderValue}</p>
+      </div>
       {inputValues.length && <p>Length: {inputValues.length}</p>}
       {inputValues.suture_width && <p>Suture Width: {inputValues.suture_width}</p>}
 
       <h1>Trace Suture</h1>
       <div className='container'>
-        <div className='Clicking-div' ref={traceRef}>
+        <div 
+          className='Clicking-div' 
+          ref={traceRef}
+        >
           {
             selectedImage && <img 
               src={selectedImage} 
               alt="Selected" 
               style={{ width: '1000px', height: 'auto' }}
-              onClick={(event) => handleImageClick(event, true)}
             />
           }
-          {tracePoints.map((point, index) => (
-              <div
-                key={index}
-                className="point"
-                style={{ left: point.displayX, top: point.displayY}}
-              />
-            ))
-          }
+          <div
+            className="circle"
+            ref={circleRef}
+            draggable
+
+          />
         </div>
       </div>
       <button onClick={handleSaveTrace}>Done</button>
