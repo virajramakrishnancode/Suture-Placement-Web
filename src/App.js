@@ -154,23 +154,26 @@ function App() {
         Please click two points a known distance apart!
       </p>
 
-      <div className='Clicking-div' ref={scaleRef}>
-        {
-          selectedImage && <img 
-            src={selectedImage} 
-            alt="Selected Image" 
-            style={{ width: '1000px', height: 'auto' }}
-            onClick={(event) => handleImageClick(event, false)}
-          />
-        }
-        {points.map((point, index) => (
-            <div
-              key={index}
-              className="point"
-              style={{ left: point.displayX, top: point.displayY}}
+      <div className='container'>
+        <div className='Clicking-div' ref={scaleRef}>
+          {
+            selectedImage && <img 
+              src={selectedImage} 
+              alt="Selected Image" 
+              style={{ width: '1000px', height: 'auto' }}
+              onClick={(event) => handleImageClick(event, false)}
             />
-          ))
-        }
+          }
+          {points.map((point, index) => (
+              <div
+                key={index}
+                className="point"
+                style={{ left: point.displayX, top: point.displayY}}
+              />
+            ))
+          }
+        </div>
+
       </div>
 
 
@@ -220,23 +223,25 @@ function App() {
       {inputValues.suture_width && <p>Suture Width: {inputValues.suture_width}</p>}
 
       <h1>Trace Suture</h1>
-      <div className='Clicking-div' ref={traceRef}>
-        {
-          selectedImage && <img 
-            src={selectedImage} 
-            alt="Selected" 
-            style={{ width: '1000px', height: 'auto' }}
-            onClick={(event) => handleImageClick(event, true)}
-          />
-        }
-        {tracePoints.map((point, index) => (
-            <div
-              key={index}
-              className="point"
-              style={{ left: point.displayX, top: point.displayY}}
+      <div className='container'>
+        <div className='Clicking-div' ref={traceRef}>
+          {
+            selectedImage && <img 
+              src={selectedImage} 
+              alt="Selected" 
+              style={{ width: '1000px', height: 'auto' }}
+              onClick={(event) => handleImageClick(event, true)}
             />
-          ))
-        }
+          }
+          {tracePoints.map((point, index) => (
+              <div
+                key={index}
+                className="point"
+                style={{ left: point.displayX, top: point.displayY}}
+              />
+            ))
+          }
+        </div>
       </div>
       <button onClick={handleSaveTrace}>Done</button>
       {savedTrace && (
@@ -253,40 +258,43 @@ function App() {
       )}
 
       <h1> Results </h1>
-      <div className='Output-div' ref={outputRef}>
-        {
-          selectedImage && <img 
-            src={selectedImage} 
-            alt="Selected Image" 
-            style={{ width: '1000px', height: 'auto' }}
-          />
-        }
-        {centerPoints.map((point, index) => (
-            <div
-              key={index}
-              className="green_point"
-              style={{ left: point.displayX, top: point.displayY}}
+      <div className='container'>
+        <div className='Output-div' ref={outputRef}>
+          {
+            selectedImage && <img 
+              src={selectedImage} 
+              alt="Selected Image" 
+              style={{ width: '1000px', height: 'auto' }}
             />
-          ))
-        }
+          }
+          {centerPoints.map((point, index) => (
+              <div
+                key={index}
+                className="green_point"
+                style={{ left: point.displayX, top: point.displayY}}
+              />
+            ))
+          }
 
-        {insertionPoints.map((point, index) => (
-            <div
-              key={index}
-              className="blue_point"
-              style={{ left: point.displayX, top: point.displayY}}
-            />
-          ))
-        }
+          {insertionPoints.map((point, index) => (
+              <div
+                key={index}
+                className="blue_point"
+                style={{ left: point.displayX, top: point.displayY}}
+              />
+            ))
+          }
 
-        {extractionPoints.map((point, index) => (
-            <div
-              key={index}
-              className="point"
-              style={{ left: point.displayX, top: point.displayY}}
-            />
-          ))
-        }
+          {extractionPoints.map((point, index) => (
+              <div
+                key={index}
+                className="point"
+                style={{ left: point.displayX, top: point.displayY}}
+              />
+            ))
+          }
+
+        </div>
 
       </div>
     </>

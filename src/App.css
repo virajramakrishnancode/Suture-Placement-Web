@@ -24,10 +24,16 @@
   color: white;
 }
 
+.container {
+  display: flex;
+  justify-content: center;
+}
+
 .Clicking-div {
   align-items: center;
   justify-content: center;
   width: '1000px';
+  margin: 0 auto;
 }
 
 .Output-div {
