@@ -7,11 +7,6 @@ function App() {
   const scaleRef = useRef(null);
   const traceRef = useRef(null); 
   const outputRef = useRef(null);  
-  const [savedPoints, setSavedPoints] = useState(null);
-  const [inputValues, setInputValues] = useState({
-    suture_width: '',
-    length: ''
-  })
 
   const [tracePoints, setTracePoints] = useState([]);
   const [savedTrace, setSavedTrace] = useState(null);
@@ -22,6 +17,7 @@ function App() {
 
   const [sliderValue, setSliderValue] = useState(5);
 
+  const [sutureWidth, setSutureWidth] = useState(0);
   const [idealDist, setIdealDist] = useState(50);
 
   // code for dragging scale disk
@@ -54,23 +50,18 @@ function App() {
     setIdealDist(parseInt(event.target.value));
   };
 
+  const handleSutureWidth = (event) => {
+    setSutureWidth(parseInt(event.target.value))
+  }
+
   const handleSliderChange = (event) => {
     setSliderValue(parseInt(event.target.value));
   };
-
-  const handleScaleInputChange = (event) => {
-    const { name, value } = event.target;
-    setInputValues((prevFormData) => ({
-      ...prevFormData,
-      [name]: value
-    }));
-  }
 
   const handleFormSubmit = (event) => {
     event.preventDefault();
 
   };
-
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -112,19 +103,14 @@ function App() {
     }
   };
 
-  const handleSavePoints = () => {
-    setSavedPoints([...points]);
-
-  };
-
   const handleSaveTrace = async () => {
     setSavedTrace([...tracePoints]);
 
     try {
 
       const requestData = {
-        scaleValues: inputValues,
-        savedPoints: savedPoints,
+        sutureWidth: sutureWidth,
+        idealDist: idealDist,
         tracePoints: tracePoints
       };
       const response = await fetch('http://localhost:8000/get_wound_parameters', {
@@ -202,7 +188,6 @@ function App() {
             />
           }
           {
-
             selectedImage && <div
             className="circle"
             ref={circleRef}
@@ -227,37 +212,17 @@ function App() {
 
       </div>
 
-      <div className='container'>
-        <button onClick={handleSavePoints}>Done</button>
-      </div>
-
-
-      {savedPoints && (
-        <div>
-          <h2>Saved Points:</h2>
-          <ul>
-            {savedPoints.map((point, index) => (
-              <li key={index}>
-                Point {index + 1}: ({point.x}, {point.y})
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
       <h1>Scale Info</h1>
       <div>
         <input
             type="range"
             min="0"
             max="10"
-            value={sliderValue}
-            onChange={handleSliderChange}
+            value={sutureWidth}
+            onChange={handleSutureWidth}
           />
-        <p>Suture Width (mm): {sliderValue}</p>
+        <p>Suture Width (mm): {sutureWidth}</p>
       </div>
-      {inputValues.length && <p>Length: {inputValues.length}</p>}
-      {inputValues.suture_width && <p>Suture Width: {inputValues.suture_width}</p>}
 
       <h1>Trace Suture</h1>
       <div className='container'>
@@ -273,7 +238,27 @@ function App() {
               onClick={(event) => handleImageClick(event, true)}
             />
           }
+          
+          <div>
+            <h2>Trace Points:</h2>
+            <ul>
+              {tracePoints.map((point, index) => (
+                <li key={index}>
+                  Point {index + 1}: ({point.x}, {point.y})
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
+
+        {tracePoints.map((point, index) => (
+              <div
+                key={index}
+                className="point"
+                style={{ left: point.displayX, top: point.displayY}}
+              />
+            ))
+          }
       </div>
       <button onClick={handleSaveTrace}>Done</button>
       {savedTrace && (
