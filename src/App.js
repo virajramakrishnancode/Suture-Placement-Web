@@ -22,7 +22,7 @@ function App() {
 
   const [sliderValue, setSliderValue] = useState(5);
 
-  const [idealDist, setIdealDist] = useState(5);
+  const [idealDist, setIdealDist] = useState(50);
 
   // code for dragging scale disk
 
@@ -192,23 +192,46 @@ function App() {
         Please resize and drag the disk so that its diameter is ideally how far away two sutures should be!
       </p>
 
-      <div>
-        <input
-            type="range"
-            min="0"
-            max="10"
-            value={idealDist}
-            onChange={handleIdealDist}
+      <div className='container'>
+        <div className='Clicking-div' ref={scaleRef}>
+          {
+            selectedImage && <img 
+              src={selectedImage} 
+              alt="Selected Image" 
+              style={{ width: '1000px', height: 'auto' }}
+            />
+          }
+          {
+
+            selectedImage && <div
+            className="circle"
+            ref={circleRef}
+            draggable='true'
+            style={{ height: idealDist, width: idealDist, top: "50%", left: "50%"}}
           />
-        <p>Ideal distance between sutures</p>
+          }
+        </div>
+      </div>
+
+      <div>
+        <div className='flex-item'>
+          <input
+              type="range"
+              min="50"
+              max="300"
+              value={idealDist}
+              onChange={handleIdealDist}
+            />
+        </div>
+        <div className='flex-item'>Circle size</div>
+
       </div>
 
       <div className='container'>
-
-
+        <button onClick={handleSavePoints}>Done</button>
       </div>
 
-      <button onClick={handleSavePoints}>Done</button>
+
       {savedPoints && (
         <div>
           <h2>Saved Points:</h2>
@@ -223,25 +246,6 @@ function App() {
       )}
 
       <h1>Scale Info</h1>
-      <form onSubmit={handleFormSubmit}>
-        <input
-          type="number"
-          name='length'
-          value={inputValues.length}
-          onChange={handleScaleInputChange}
-          placeholder="point dist (mm)"
-        />
-        <br />
-        <input
-          type="number"
-          name='suture_width'
-          value={inputValues.suture_width}
-          onChange={handleScaleInputChange}
-          placeholder="suture width (mm)"
-        />
-        <br />
-        <button type="submit">Submit</button>
-      </form>
       <div>
         <input
             type="range"
@@ -266,14 +270,9 @@ function App() {
               src={selectedImage} 
               alt="Selected" 
               style={{ width: '1000px', height: 'auto' }}
+              onClick={(event) => handleImageClick(event, true)}
             />
           }
-          <div
-            className="circle"
-            ref={circleRef}
-            draggable
-
-          />
         </div>
       </div>
       <button onClick={handleSaveTrace}>Done</button>
