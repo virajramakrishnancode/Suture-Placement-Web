@@ -15,8 +15,6 @@ function App() {
   const [centerPoints, setCenterPoints] = useState([]);
   const [extractionPoints, setExtractionPoints] = useState([]);
 
-  const [sliderValue, setSliderValue] = useState(5);
-
   const [sutureWidth, setSutureWidth] = useState(0);
   const [idealDist, setIdealDist] = useState(50);
 
@@ -27,21 +25,22 @@ function App() {
   const circleRef = useRef();
 
   const handleMouseDown = (event) => {
-    setIsDragging(true);
+    console.log("down!");
+    setIsDragging(!isDragging);
   };
 
   const handleMouseUp = () => {
-    setIsDragging(false);
+    console.log("up!");
   };
 
   const handleMouseMove = (event) => {
     if (!isDragging) return;
 
     const { clientX, clientY } = event;
-    const circleRect = circleRef.current.getBoundingClientRect();
+    const circleRect = scaleRef.current.getBoundingClientRect();
 
-    const offsetX = clientX - circleRect.left;
-    const offsetY = clientY - circleRect.top;
+    const offsetX = clientX - circleRect.left - idealDist/2;
+    const offsetY = clientY - circleRect.top - idealDist/2;
 
     setPosition({ x: offsetX, y: offsetY });
   };
@@ -53,15 +52,6 @@ function App() {
   const handleSutureWidth = (event) => {
     setSutureWidth(parseInt(event.target.value))
   }
-
-  const handleSliderChange = (event) => {
-    setSliderValue(parseInt(event.target.value));
-  };
-
-  const handleFormSubmit = (event) => {
-    event.preventDefault();
-
-  };
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -179,7 +169,11 @@ function App() {
       </p>
 
       <div className='container'>
-        <div className='Clicking-div' ref={scaleRef}>
+        <div className='Clicking-div' draggable="false"
+          ref={scaleRef} 
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
+          onMouseMove={handleMouseMove}>
           {
             selectedImage && <img 
               src={selectedImage} 
@@ -189,10 +183,10 @@ function App() {
           }
           {
             selectedImage && <div
-            className="circle"
+            className={isDragging ? "dragged-circle" : "circle"}
             ref={circleRef}
             draggable='true'
-            style={{ height: idealDist, width: idealDist, top: "50%", left: "50%"}}
+            style={{ height: idealDist, width: idealDist, left: position.x, top: position.y}}
           />
           }
         </div>
