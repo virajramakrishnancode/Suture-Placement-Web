@@ -1,5 +1,9 @@
 import './App.css';
 import React, { useState, useRef } from 'react';
+import active from './images/active.svg';
+import done from './images/done.svg';
+import inactive from './images/inactive.svg';
+import upload from './images/upload.svg';
 
 function App() {
   const [selectedImage, setSelectedImage] = useState(null);
@@ -33,6 +37,7 @@ function App() {
 
   };
 
+  
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -135,159 +140,185 @@ function App() {
 
   return (
     <>
-      <div className="App">
-        <header className="App-header">
+      <div className="body" style={{ width : '1920px', height:'1080px'}}>
+        <div className="sideinfo">
+          <h1>
+            Upload Image
+          </h1>
+          <div className="helperText" style={{marginBottom:"49px"}}>
+            Upload an image of a wound. Make sure the whole wound is visible.
+          </div>
+          <div className="taskText">
+            <img width="24px" src={active} alt="" /> <strong>Upload</strong> an image of a wound.
+          </div>
+          <div className="bottomArea">
+            <div className="bottomAreaContent" style={{marginLeft:"11px", marginTop:"4px"}}>
+              <div class="vertical" style={{left:"22px", top:"13px", zIndex:"-1"}}></div>
+              <h2 id="majorTask1"><img width="24px" src={active} alt="" /> Upload Image</h2><br/>
+              <h2 id="majorTask2"><img width="24px" src={inactive} alt="" /> Locate Wound</h2><br/>
+              <h2 id="majorTask3"><img width="24px" src={inactive} alt="" /> Process</h2><br/>
+              <h2 id="majorTask4"><img width="24px" src={inactive} alt="" /> Results</h2><br/>
+            </div>
+          </div>
+        </div>
+
+        <div className="main">
+          <div className="imageUploadPanel" id="imageUploadPanel"> 
+              <label for="imgUpload">Upload Image</label>      
+              <input id="imgUpload" type="file" accept="image/*" style={{zIndex:"10"}} onChange={handleImageUpload} />
+          </div>
+        </div>
+
+        {/* Old stuff. Don't use. */}
+        <div className="old" style={{display:"none"}}>
+          <div>
+            <h1>Image Upload</h1>
+            <input type="file" accept="image/*" onChange={handleImageUpload} />
+          </div>
+          
+          <h1>
+            Scale Measurement
+          </h1>
           <p>
-            Suture Placement
+            Please click two points a known distance apart!
           </p>
-        </header>
-      </div>
-      <div>
-        <h1>Image Upload</h1>
-        <input type="file" accept="image/*" onChange={handleImageUpload} />
-      </div>
-      
-      <h1>
-        Scale Measurement
-      </h1>
-      <p>
-        Please click two points a known distance apart!
-      </p>
 
-      <div className='Clicking-div' ref={scaleRef}>
-        {
-          selectedImage && <img 
-            src={selectedImage} 
-            alt="Selected Image" 
-            style={{ width: '1000px', height: 'auto' }}
-            onClick={(event) => handleImageClick(event, false)}
-          />
-        }
-        {points.map((point, index) => (
-            <div
-              key={index}
-              className="point"
-              style={{ left: point.displayX, top: point.displayY}}
-            />
-          ))
-        }
-      </div>
+          <div className='Clicking-div' ref={scaleRef}>
+            {
+              selectedImage && <img 
+                src={selectedImage} 
+                alt="Selected Image" 
+                style={{ width: '1000px', height: 'auto' }}
+                onClick={(event) => handleImageClick(event, false)}
+              />
+            }
+            {points.map((point, index) => (
+                <div
+                  key={index}
+                  className="point"
+                  style={{ left: point.displayX, top: point.displayY}}
+                />
+              ))
+            }
+          </div>
 
 
-      {points.length > 0 && (
-        <div>
-          <p>Point 1: ({points[0].x}, {points[0].y})</p>
-          {points.length === 2 && (
-            <p>Point 2: ({points[1].x}, {points[1].y})</p>
+          {points.length > 0 && (
+            <div>
+              <p>Point 1: ({points[0].x}, {points[0].y})</p>
+              {points.length === 2 && (
+                <p>Point 2: ({points[1].x}, {points[1].y})</p>
+              )}
+            </div>
           )}
+          <button onClick={handleSavePoints}>Done</button>
+          {savedPoints && (
+            <div>
+              <h2>Saved Points:</h2>
+              <ul>
+                {savedPoints.map((point, index) => (
+                  <li key={index}>
+                    Point {index + 1}: ({point.x}, {point.y})
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <h1>Scale Info</h1>
+          <form onSubmit={handleFormSubmit}>
+            <input
+              type="number"
+              name='length'
+              value={inputValues.length}
+              onChange={handleScaleInputChange}
+              placeholder="point dist (mm)"
+            />
+            <br />
+            <input
+              type="number"
+              name='suture_width'
+              value={inputValues.suture_width}
+              onChange={handleScaleInputChange}
+              placeholder="suture width (mm)"
+            />
+            <br />
+            <button type="submit">Submit</button>
+          </form>
+          {inputValues.length && <p>Length: {inputValues.length}</p>}
+          {inputValues.suture_width && <p>Suture Width: {inputValues.suture_width}</p>}
+
+          <h1>Trace Suture</h1>
+          <div className='Clicking-div' ref={traceRef}>
+            {
+              selectedImage && <img 
+                src={selectedImage} 
+                alt="Selected" 
+                style={{ width: '1000px', height: 'auto' }}
+                onClick={(event) => handleImageClick(event, true)}
+              />
+            }
+            {tracePoints.map((point, index) => (
+                <div
+                  key={index}
+                  className="point"
+                  style={{ left: point.displayX, top: point.displayY}}
+                />
+              ))
+            }
+          </div>
+          <button onClick={handleSaveTrace}>Done</button>
+          {savedTrace && (
+            <div>
+              <h2>Saved Trace Points:</h2>
+              <ul>
+                {savedTrace.map((point, index) => (
+                  <li key={index}>
+                    Point {index + 1}: ({point.x}, {point.y})
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <h1> Results </h1>
+          <div className='Output-div' ref={outputRef}>
+            {
+              selectedImage && <img 
+                src={selectedImage} 
+                alt="Selected Image" 
+                style={{ width: '1000px', height: 'auto' }}
+              />
+            }
+            {centerPoints.map((point, index) => (
+                <div
+                  key={index}
+                  className="green_point"
+                  style={{ left: point.displayX, top: point.displayY}}
+                />
+              ))
+            }
+
+            {insertionPoints.map((point, index) => (
+                <div
+                  key={index}
+                  className="blue_point"
+                  style={{ left: point.displayX, top: point.displayY}}
+                />
+              ))
+            }
+
+            {extractionPoints.map((point, index) => (
+                <div
+                  key={index}
+                  className="point"
+                  style={{ left: point.displayX, top: point.displayY}}
+                />
+              ))
+            }
+
+          </div>
         </div>
-      )}
-      <button onClick={handleSavePoints}>Done</button>
-      {savedPoints && (
-        <div>
-          <h2>Saved Points:</h2>
-          <ul>
-            {savedPoints.map((point, index) => (
-              <li key={index}>
-                Point {index + 1}: ({point.x}, {point.y})
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <h1>Scale Info</h1>
-      <form onSubmit={handleFormSubmit}>
-        <input
-          type="number"
-          name='length'
-          value={inputValues.length}
-          onChange={handleScaleInputChange}
-          placeholder="point dist (mm)"
-        />
-        <br />
-        <input
-          type="number"
-          name='suture_width'
-          value={inputValues.suture_width}
-          onChange={handleScaleInputChange}
-          placeholder="suture width (mm)"
-        />
-        <br />
-        <button type="submit">Submit</button>
-      </form>
-      {inputValues.length && <p>Length: {inputValues.length}</p>}
-      {inputValues.suture_width && <p>Suture Width: {inputValues.suture_width}</p>}
-
-      <h1>Trace Suture</h1>
-      <div className='Clicking-div' ref={traceRef}>
-        {
-          selectedImage && <img 
-            src={selectedImage} 
-            alt="Selected" 
-            style={{ width: '1000px', height: 'auto' }}
-            onClick={(event) => handleImageClick(event, true)}
-          />
-        }
-        {tracePoints.map((point, index) => (
-            <div
-              key={index}
-              className="point"
-              style={{ left: point.displayX, top: point.displayY}}
-            />
-          ))
-        }
-      </div>
-      <button onClick={handleSaveTrace}>Done</button>
-      {savedTrace && (
-        <div>
-          <h2>Saved Trace Points:</h2>
-          <ul>
-            {savedTrace.map((point, index) => (
-              <li key={index}>
-                Point {index + 1}: ({point.x}, {point.y})
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <h1> Results </h1>
-      <div className='Output-div' ref={outputRef}>
-        {
-          selectedImage && <img 
-            src={selectedImage} 
-            alt="Selected Image" 
-            style={{ width: '1000px', height: 'auto' }}
-          />
-        }
-        {centerPoints.map((point, index) => (
-            <div
-              key={index}
-              className="green_point"
-              style={{ left: point.displayX, top: point.displayY}}
-            />
-          ))
-        }
-
-        {insertionPoints.map((point, index) => (
-            <div
-              key={index}
-              className="blue_point"
-              style={{ left: point.displayX, top: point.displayY}}
-            />
-          ))
-        }
-
-        {extractionPoints.map((point, index) => (
-            <div
-              key={index}
-              className="point"
-              style={{ left: point.displayX, top: point.displayY}}
-            />
-          ))
-        }
-
       </div>
     </>
   );

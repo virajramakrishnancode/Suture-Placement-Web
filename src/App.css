@@ -64,6 +64,125 @@
   background-color: blue;
 }
 
+@font-face {
+  font-family: 'Kanit';
+  src: local('Kanit'), url(../fonts/Kanit-Regular.ttf) format('ttf');
+}
+
+h1 {
+  margin-top: 0;
+  margin-bottom: 0;
+  color: #000;
+  font-size: 50px;
+  font-style: normal;
+  font-weight: 1000;
+  line-height: normal;
+  text-decoration: underline #4100A3 4px;
+}
+
+h2 {
+  margin-top: 0;
+  margin-bottom: -20px;
+  color: #000;
+  font-size: 30px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: normal;
+}
+
+.helperText {
+  margin-top: 0;
+  color: #000;
+  font-size: 30px;
+  font-style: normal;
+  font-weight: 650;
+  line-height: normal;
+}
+
+.taskText {
+  margin-top: 0;
+  color: #000;
+  font-size: 30px;
+  font-style: normal;
+  font-weight: 550;
+  line-height: normal;
+}
+
+.bottomArea {
+  position: fixed;
+  bottom: -120px;
+  background: #E2E2E2;
+  display: inline-block;
+  width: 512.5px;
+  height: 300px;
+  border-radius: 20px;
+}
+
+.main {
+  margin-left: 535px;
+  padding: 0px 40px;
+}
+
+.body {
+  background-color: #002532;
+}
+
+.imageUploadPanel input {
+  opacity: 1;
+  width: 400px;
+  height: 90px;
+  position: absolute;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  top: 0;
+  left: 0;
+  border-color: #f00;
+  border-radius: 1px;
+  border-style: solid;
+}
+
+.imageUploadPanel {
+  position: relative;
+}
+
+.imageUploadPanel label {
+  width: 400px;
+  height: 90px;
+  background: #4100A3;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  font-size: 30px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: normal;
+}
+
+.sideinfo {
+  height: 100%;
+  width: 535px;
+  position: fixed;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  background-color: #FFF;
+  overflow-x: hidden;
+  padding-top: 23px;
+  padding-left: 23px;
+  border-right: 2px solid #E2E2E2;
+}
+
+/* Just a vertical line */
+.vertical {
+  border-left: 2px solid black;
+  height: 130px;
+  position: absolute;
+}
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
