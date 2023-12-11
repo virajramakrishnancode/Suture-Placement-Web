@@ -4,6 +4,7 @@ import active from './images/active.svg';
 import done from './images/done.svg';
 import inactive from './images/inactive.svg';
 import upload from './images/upload.svg';
+import { ThemeContext } from '@mui/styled-engine';
 
 function App() {
   const [selectedImage, setSelectedImage] = useState(null);
@@ -24,6 +25,9 @@ function App() {
   const [centerPoints, setCenterPoints] = useState([]);
   const [extractionPoints, setExtractionPoints] = useState([]);
 
+  const [activePanel, setActivePanel] = useState("uploadImage") // uploadImage, locateWound, process, results
+  const [taskNumber, setTaskNumber] = useState(1) // The task currently being done. 1 or 2 right now.
+
   const handleScaleInputChange = (event) => {
     const { name, value } = event.target;
     setInputValues((prevFormData) => ({
@@ -37,6 +41,76 @@ function App() {
 
   };
 
+  const stepToOrder = {
+    uploadImage : 1, 
+    locateWound : 2, 
+    process : 3, 
+    results : 4
+  }
+
+  const stepToInfo = {
+    uploadImage : {
+      name : "Upload Image",
+      desc : "Upload an image of a wound. Make sure the whole wound is visible.",
+      body : (<><img id="task1" width="24px" src={active} alt="" /> <strong>Upload</strong> an image of a wound.</>)
+    }, 
+    locateWound : {
+      name : "Locate Wound",
+      desc : "Help us find the wound you plan to suture.",
+      body : (<><img id="task1" width="24px" src={active} alt="" /> <strong>Select</strong> a rectangle around the target wound.<br/>
+      <img id="task2" width="24px" src={active} alt="" /> <strong>Confirm</strong> your selection.</>)
+    }, 
+    process : {
+      name : "Processing",
+      desc : "We're processing your image. Give us a moment.",
+      body : (<><img id="task1" width="24px" src={active} alt="" /> <strong>Wait</strong> just a moment while we find a good suture plan.</>)
+    }, 
+    results : {
+      name : "Results",
+      desc : "All done! You can view the suture plan on the right.",
+      body : (<>Download options and et cetera go here.</>)
+    }
+  }
+
+  function sidebarContentsFor(panel) {
+    return (<><h1>
+      {stepToInfo[panel].name}
+    </h1>
+    <div className="helperText" style={{marginBottom:"49px"}}>
+      {stepToInfo[panel].desc}
+    </div>
+    <div id="taskText" className="taskText">
+      {stepToInfo[panel].body}
+    </div>
+    <div className="bottomArea">
+      <div className="bottomAreaContent" style={{marginLeft:"11px", marginTop:"4px"}}>
+        <div class="vertical" style={{left:"22px", top:"13px", zIndex:"-1"}}></div>
+        <h2 id="majorTask1"><img width="24px" src={{1 : active, 2 : inactive, 3: inactive,  4: inactive}[stepToOrder[panel]]} alt="" /> Upload Image</h2><br/>
+        <h2 id="majorTask2"><img width="24px" src={{1 : done,   2 : active,   3: inactive,  4: inactive}[stepToOrder[panel]]} alt="" /> Locate Wound</h2><br/>
+        <h2 id="majorTask3"><img width="24px" src={{1 : done,   2 : done,     3: active,    4: inactive}[stepToOrder[panel]]} alt="" /> Process</h2><br/>
+        <h2 id="majorTask4"><img width="24px" src={{1 : done,   2 : done,     3: done,      4: done}[stepToOrder[panel]]} alt="" /> Results</h2><br/>
+      </div>
+    </div></>)
+  }
+
+  function mainAreaContentsFor(panel) {
+    return {
+      "imageUpload":
+        (<><div className="imageUploadPanel" id="imageUploadPanel"> 
+          <label for="imgUpload"><img width="24px" src={upload} alt="" />Upload Image</label>      
+          <input id="imgUpload" type="file" accept="image/*" style={{zIndex:"10"}} onChange={handleImageUpload} />
+        </div></>),
+      "locateWound":
+        (<><div className="locateWoundPanel" id="locateWoundPanel"> 
+        </div></>),
+      "process":
+        (<><div className="processPanel" id="processPanel"> 
+        </div></>),
+      "results":
+        (<><div className="resultsPanel" id="resultsPanel"> 
+        </div></>),
+    }[panel]
+  }
   
 
   const handleImageUpload = (event) => {
@@ -148,8 +222,8 @@ function App() {
           <div className="helperText" style={{marginBottom:"49px"}}>
             Upload an image of a wound. Make sure the whole wound is visible.
           </div>
-          <div className="taskText">
-            <img width="24px" src={active} alt="" /> <strong>Upload</strong> an image of a wound.
+          <div id="taskText" className="taskText">
+            <img id="task1" width="24px" src={active} alt="" /> <strong>Upload</strong> an image of a wound.
           </div>
           <div className="bottomArea">
             <div className="bottomAreaContent" style={{marginLeft:"11px", marginTop:"4px"}}>
@@ -163,8 +237,9 @@ function App() {
         </div>
 
         <div className="main">
+
           <div className="imageUploadPanel" id="imageUploadPanel"> 
-              <label for="imgUpload">Upload Image</label>      
+              <label for="imgUpload"><img width="24px" src={upload} alt="" />Upload Image</label>      
               <input id="imgUpload" type="file" accept="image/*" style={{zIndex:"10"}} onChange={handleImageUpload} />
           </div>
         </div>

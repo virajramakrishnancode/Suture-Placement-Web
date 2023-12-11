@@ -131,19 +131,11 @@ h2 {
   opacity: 1;
   width: 400px;
   height: 90px;
-  position: absolute;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto;
-  top: 0;
-  left: 0;
-  border-color: #f00;
-  border-radius: 1px;
-  border-style: solid;
 }
 
 .imageUploadPanel {
-  position: relative;
+  margin-left: auto;
+  padding: 400px;
 }
 
 .imageUploadPanel label {
@@ -154,8 +146,8 @@ h2 {
   cursor: pointer;
   display: flex;
   align-items: center;
+  position: absolute;
   justify-content: center;
-  margin: 0 auto;
   font-size: 30px;
   font-style: normal;
   font-weight: 800;
