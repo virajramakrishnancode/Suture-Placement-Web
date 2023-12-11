@@ -1,9 +1,10 @@
 import './App.css';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import active from './images/active.svg';
 import done from './images/done.svg';
 import inactive from './images/inactive.svg';
 import upload from './images/upload.svg';
+import angleIcon from './images/angle-icon.svg';
 import { ThemeContext } from '@mui/styled-engine';
 
 function App() {
@@ -34,7 +35,7 @@ function App() {
       ...prevFormData,
       [name]: value
     }));
-  }
+  };
 
   const handleFormSubmit = (event) => {
     event.preventDefault();
@@ -46,7 +47,7 @@ function App() {
     locateWound : 2, 
     process : 3, 
     results : 4
-  }
+  };
 
   const stepToInfo = {
     uploadImage : {
@@ -68,9 +69,11 @@ function App() {
     results : {
       name : "Results",
       desc : "All done! You can view the suture plan on the right.",
-      body : (<>Download options and et cetera go here.</>)
+      body : (<><h3><img width="24px" src={angleIcon} alt="" /> Save as .jpg</h3><br/>
+      <h3><img width="24px" src={angleIcon} alt="" /> Restart</h3><br/>
+      <h3><img width="24px" src={angleIcon} alt="" /> Give Feedback</h3><br/></>)
     }
-  }
+  };
 
   function sidebarContentsFor(panel) {
     return (<><h1>
@@ -84,33 +87,42 @@ function App() {
     </div>
     <div className="bottomArea">
       <div className="bottomAreaContent" style={{marginLeft:"11px", marginTop:"4px"}}>
-        <div class="vertical" style={{left:"22px", top:"13px", zIndex:"-1"}}></div>
-        <h2 id="majorTask1"><img width="24px" src={{1 : active, 2 : inactive, 3: inactive,  4: inactive}[stepToOrder[panel]]} alt="" /> Upload Image</h2><br/>
-        <h2 id="majorTask2"><img width="24px" src={{1 : done,   2 : active,   3: inactive,  4: inactive}[stepToOrder[panel]]} alt="" /> Locate Wound</h2><br/>
-        <h2 id="majorTask3"><img width="24px" src={{1 : done,   2 : done,     3: active,    4: inactive}[stepToOrder[panel]]} alt="" /> Process</h2><br/>
-        <h2 id="majorTask4"><img width="24px" src={{1 : done,   2 : done,     3: done,      4: done}[stepToOrder[panel]]} alt="" /> Results</h2><br/>
+        <div className="vertical" style={{left:"22px", top:"13px", zIndex:"-1"}}></div>
+        <h2 id="majorTask1"><img onClick={composeStateSet("uploadImage")} width="24px" src={{1 : active,   2 : done,     3: done,      4: done}[stepToOrder[panel]]} alt="" /> Upload Image</h2><br/>
+        <h2 id="majorTask2"><img onClick={composeStateSet("locateWound")} width="24px" src={{1 : inactive, 2 : active,   3: done,      4: done}[stepToOrder[panel]]} alt="" /> Locate Wound</h2><br/>
+        <h2 id="majorTask3"><img onClick={composeStateSet("process")} width="24px" src={{1 : inactive, 2 : inactive, 3: active,    4: done}[stepToOrder[panel]]} alt="" /> Process</h2><br/>
+        <h2 id="majorTask4"><img onClick={composeStateSet("results")} width="24px" src={{1 : inactive, 2 : inactive, 3: inactive,  4: done}[stepToOrder[panel]]} alt="" /> Results</h2><br/>
       </div>
     </div></>)
-  }
+  };
 
   function mainAreaContentsFor(panel) {
     return {
-      "imageUpload":
-        (<><div className="imageUploadPanel" id="imageUploadPanel"> 
+      "uploadImage":
+        (<div className="uploadImagePanel" id="uploadImagePanel"> 
           <label for="imgUpload"><img width="24px" src={upload} alt="" />Upload Image</label>      
           <input id="imgUpload" type="file" accept="image/*" style={{zIndex:"10"}} onChange={handleImageUpload} />
-        </div></>),
+        </div>),
       "locateWound":
-        (<><div className="locateWoundPanel" id="locateWoundPanel"> 
-        </div></>),
+        (<div className="locateWoundPanel" id="locateWoundPanel"> 
+        {
+          selectedImage && 
+          <img 
+            src={selectedImage}
+            alt="Selected"
+            style={{ width: '1000px', height: 'auto' }}
+            onClick={(event) => handleImageClick(event, true)}
+          />
+        }
+        </div>),
       "process":
-        (<><div className="processPanel" id="processPanel"> 
-        </div></>),
+        (<div className="processPanel" id="processPanel"> 
+        </div>),
       "results":
-        (<><div className="resultsPanel" id="resultsPanel"> 
-        </div></>),
+        (<div className="resultsPanel" id="resultsPanel"> 
+        </div>),
     }[panel]
-  }
+  };
   
 
   const handleImageUpload = (event) => {
@@ -123,6 +135,7 @@ function App() {
 
     if (file) {
       reader.readAsDataURL(file);
+      setActivePanel("locateWound")
     }
   };
 
@@ -212,36 +225,21 @@ function App() {
     
   };
 
+  function composeStateSet(toState) {
+    return function() {
+      setActivePanel(toState)
+    }
+  }
+
   return (
     <>
       <div className="body" style={{ width : '1920px', height:'1080px'}}>
         <div className="sideinfo">
-          <h1>
-            Upload Image
-          </h1>
-          <div className="helperText" style={{marginBottom:"49px"}}>
-            Upload an image of a wound. Make sure the whole wound is visible.
-          </div>
-          <div id="taskText" className="taskText">
-            <img id="task1" width="24px" src={active} alt="" /> <strong>Upload</strong> an image of a wound.
-          </div>
-          <div className="bottomArea">
-            <div className="bottomAreaContent" style={{marginLeft:"11px", marginTop:"4px"}}>
-              <div class="vertical" style={{left:"22px", top:"13px", zIndex:"-1"}}></div>
-              <h2 id="majorTask1"><img width="24px" src={active} alt="" /> Upload Image</h2><br/>
-              <h2 id="majorTask2"><img width="24px" src={inactive} alt="" /> Locate Wound</h2><br/>
-              <h2 id="majorTask3"><img width="24px" src={inactive} alt="" /> Process</h2><br/>
-              <h2 id="majorTask4"><img width="24px" src={inactive} alt="" /> Results</h2><br/>
-            </div>
-          </div>
+          {sidebarContentsFor(activePanel)}
         </div>
 
         <div className="main">
-
-          <div className="imageUploadPanel" id="imageUploadPanel"> 
-              <label for="imgUpload"><img width="24px" src={upload} alt="" />Upload Image</label>      
-              <input id="imgUpload" type="file" accept="image/*" style={{zIndex:"10"}} onChange={handleImageUpload} />
-          </div>
+          {mainAreaContentsFor(activePanel)}
         </div>
 
         {/* Old stuff. Don't use. */}
