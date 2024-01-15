@@ -121,7 +121,7 @@ h3 {
 
 .bottomArea {
   position: fixed;
-  bottom: -120px;
+  bottom: -90px;
   background: #E2E2E2;
   display: inline-block;
   width: 512.5px;
@@ -182,7 +182,7 @@ h3 {
 /* Just a vertical line */
 .vertical {
   border-left: 2px solid black;
-  height: 130px;
+  height: 170px;
   position: absolute;
 }
 
