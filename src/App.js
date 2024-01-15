@@ -53,6 +53,12 @@ function App() {
     results : 5
   };
 
+  /*const recordRectPos = () => {
+    console.log(imageComponent);
+    console.log(sizingRect)
+    console.log("FastSAM Rect Data:", extrapolateRectPos(imageComponent.position(), sizingRect.position(), sizingRect.size(), imageComponent.scale()))
+  }*/
+
   const stepToInfo = {
     uploadImage : {
       name : "Upload Image",
@@ -63,7 +69,8 @@ function App() {
       name : "Locate Wound",
       desc : "Help us find the wound you plan to suture.",
       body : (<><img id="task1" width="24px" src={active} alt="" /> <strong>Select</strong> a rectangle around the target wound.<br/>
-      <img id="task2" width="24px" src={active} alt="" /> <strong>Confirm</strong> your selection.</>)
+      <img id="task2" width="24px" src={active} alt="" /> <strong>Confirm</strong> your selection.<br/>
+      <button onClick={composeStateSet("scaleSuture")}><strong>Confirm Rectangle</strong></button></>) // onclick goes here
     }, 
     scaleSuture : {
       name : "Scale Suture",
@@ -107,13 +114,13 @@ function App() {
     </div></>)
   };
 
-  var stage
-  var layer
+  let stage
+  let layer
   var imageDisplayWidth = 1385
   var imageDisplayHeight = 1080
   function prepStageAndLayer() {
     stage = new Konva.Stage({
-      container: 'testRealm',
+      container: 'mainCanvas',
       width: imageDisplayWidth,
       height: imageDisplayHeight
     });
@@ -147,11 +154,35 @@ function App() {
   // The start and end coordinates of the rectangle, in pixels
   // Adds a few pixels extra just in case of scaling weirdness which can happen sometimes
   // TODO: Prevent OOB returns (like under 0 or above img size)
+  let recordedRectPos;
+  var sizingRect;
   const extrapolateRectPos = (imagePos, rectPos, rectSize, imageScale) => {
     var rectOffset = {x: rectPos.x - imagePos.x, y: rectPos.y - imagePos.y} // Difference between rect's pos and image's pos.
     var scaledOffset = {x: rectOffset.x / imageScale.x, y: rectOffset.y / imageScale.y} // Rect's position on actual image.
     var scaledRectSize = {x: rectSize.width / imageScale.x, y: rectSize.height / imageScale.y}
     return {x: scaledOffset.x - 15, y: scaledOffset.y - 15, w: scaledRectSize.x + 30, h: scaledRectSize.y + 30}
+  }
+
+  let savedImage;
+  function addClickableArea() {
+    var clickArea = new Konva.Rect({
+      fill: '#ff0000',
+      opacity: 0.5,
+      width: imageDisplayWidth,
+      height: imageDisplayHeight
+    });
+
+    console.log(savedImage)
+    stage = new Konva.Stage({
+      container: 'mainCanvas',
+      width: imageDisplayWidth,
+      height: imageDisplayHeight
+    });
+    layer = new Konva.Layer();
+    stage.add(layer);
+    
+    layer.add(clickArea);
+    layer.draw();
   }
 
   const addSizingRect = () => {
@@ -163,7 +194,7 @@ function App() {
       stroke: 'black',
       strokeWidth: 2,
     })
-    var rect = new Konva.Rect({
+    sizingRect = new Konva.Rect({
       draggable: true,
       fill: '#4100A3',
       opacity: 0.2,
@@ -191,15 +222,15 @@ function App() {
     // Updates position of handle and its icon.
     // There's probably some kind of grouping / container stuff that we can do to update the icon's position automatically.
     const enforceHandlePos = () => {
-      handle.x(rect.x() + rect.width());
-      handle.y(rect.y() + rect.height());
+      handle.x(sizingRect.x() + sizingRect.width());
+      handle.y(sizingRect.y() + sizingRect.height());
       if (imageObj.complete && scaleIcon) {
-        scaleIcon.x(rect.x() + rect.width() - 10);
-        scaleIcon.y(rect.y() + rect.height() - 10);
+        scaleIcon.x(sizingRect.x() + sizingRect.width() - 10);
+        scaleIcon.y(sizingRect.y() + sizingRect.height() - 10);
       }
     };
 
-    rect.on('dragmove', (e) => {
+    sizingRect.on('dragmove', (e) => {
       enforceHandlePos();
     });
 
@@ -207,21 +238,21 @@ function App() {
       // Resize rect
       var minWidth = 50;
       var minHeight = 50;
-      var targetWidth = handle.x() - rect.x();
-      var targetHeight = handle.y() - rect.y();
-      rect.width(Math.max(minWidth, targetWidth));
-      rect.height(Math.max(minHeight, targetHeight));
+      var targetWidth = handle.x() - sizingRect.x();
+      var targetHeight = handle.y() - sizingRect.y();
+      sizingRect.width(Math.max(minWidth, targetWidth));
+      sizingRect.height(Math.max(minHeight, targetHeight));
 
       // Enforce handle position
       enforceHandlePos();
     });
 
     // Light up on hover.
-    rect.on('mouseover', () => {
-      rect.fill("#8433ff");
+    sizingRect.on('mouseover', () => {
+      sizingRect.fill("#8433ff");
     });
-    rect.on('mouseout', () => {
-      rect.fill("#4100A3");
+    sizingRect.on('mouseout', () => {
+      sizingRect.fill("#4100A3");
     });
     handle.on('mouseover', () => {
       handle.fill("#8433ff");
@@ -230,11 +261,12 @@ function App() {
       handle.fill("#4100A3");
     });
 
-    handle.on('wheel', (e) => {
-      console.log("FastSAM Rect Data:", extrapolateRectPos(imageComponent.position(), rect.position(), rect.size(), imageComponent.scale()))
-    });
+    handle.on('wheel', () => {
+      recordedRectPos = extrapolateRectPos(imageComponent.position(), sizingRect.position(), sizingRect.size(), imageComponent.scale())
+      console.log(recordedRectPos)
+    })
 
-    layer.add(rect);
+    layer.add(sizingRect);
     layer.add(handle);
 
     enforceHandlePos();
@@ -248,6 +280,7 @@ function App() {
 
     var URL = window.webkitURL || window.URL;
     var url = URL.createObjectURL(event.target.files[0]);
+    savedImage = event.target.files[0]
     var img = new Image();
     img.src = url;
 
@@ -376,6 +409,9 @@ function App() {
 
   function composeStateSet(toState) {
     return function() {
+      if (toState == "scaleSuture") {
+        addClickableArea()
+      }
       setActivePanel(toState)
     }
   }
@@ -391,7 +427,7 @@ function App() {
           {mainAreaContentsFor(activePanel)}
         </div>
 
-        <div id="testRealm" style={{position:"absolute", left:"535px"}}>
+        <div id="mainCanvas" style={{position:"absolute", left:"535px"}}>
 
         </div>
 
