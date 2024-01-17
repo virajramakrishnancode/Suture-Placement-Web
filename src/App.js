@@ -513,7 +513,7 @@ function App() {
         setTimeout(() => {
           setActivePanel("results")
           showDemoResult()
-        }, 1)
+        }, 5000)
       }
       setActivePanel(toState)
     }
