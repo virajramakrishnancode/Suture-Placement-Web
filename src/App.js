@@ -9,6 +9,7 @@ import { ThemeContext } from '@mui/styled-engine';
 import { Stage, Layer } from 'react-konva';
 import useImage from 'use-image';
 import Konva from 'konva';
+import { render } from '@testing-library/react';
 
 function App() {
   const [selectedImage, setSelectedImage] = useState(null);
@@ -31,6 +32,8 @@ function App() {
 
   const [activePanel, setActivePanel] = useState("uploadImage") // uploadImage, locateWound, process, results
   const [taskNumber, setTaskNumber] = useState(1) // The task currently being done. 1 or 2 right now.
+
+  const [savedImage, setSavedImage] = useState(null);
 
   const handleScaleInputChange = (event) => {
     const { name, value } = event.target;
@@ -69,19 +72,20 @@ function App() {
       name : "Locate Wound",
       desc : "Help us find the wound you plan to suture.",
       body : (<><img id="task1" width="24px" src={active} alt="" /> <strong>Select</strong> a rectangle around the target wound.<br/>
-      <img id="task2" width="24px" src={active} alt="" /> <strong>Confirm</strong> your selection.<br/>
+      <img id="task2" width="24px" src={inactive} alt="" /> <strong>Confirm</strong> your selection.<br/>
       <button onClick={composeStateSet("scaleSuture")}><strong>Confirm Rectangle</strong></button></>) // onclick goes here
     }, 
     scaleSuture : {
       name : "Scale Suture",
       desc : "Show us how long an example suture should be.",
       body : (<><img id="task1" width="24px" src={active} alt="" /> <strong>Click</strong> a spot you might start a suture.<br/>
-      <img id="task2" width="24px" src={active} alt="" /> <strong>Click</strong> a spot you might end that suture.<br/></>)
+      <img id="task2" width="24px" src={inactive} alt="" /> <strong>Click</strong> a spot you might end that suture.<br/>
+      <button onClick={composeStateSet("process")}><strong>Confirm Scaling</strong></button></>)
     },
     process : {
       name : "Processing",
       desc : "We're processing your image. Give us a moment.",
-      body : (<><img id="task1" width="24px" src={active} alt="" /> <strong>Wait</strong> just a moment while we find a good suture plan.</>)
+      body : (<><img id="task1" width="24px" src={active} alt="" /> <strong>Wait</strong> just a moment while we find a good suture plan. Don't leave the page.</>)
     }, 
     results : {
       name : "Results",
@@ -114,20 +118,8 @@ function App() {
     </div></>)
   };
 
-  let stage
-  let layer
   var imageDisplayWidth = 1385
   var imageDisplayHeight = 1080
-  function prepStageAndLayer() {
-    stage = new Konva.Stage({
-      container: 'mainCanvas',
-      width: imageDisplayWidth,
-      height: imageDisplayHeight
-    });
-    layer = new Konva.Layer();
-    stage.add(layer);
-    stage.draw();
-  }
 
   function mainAreaContentsFor(panel) {
     return {
@@ -163,16 +155,21 @@ function App() {
     return {x: scaledOffset.x - 15, y: scaledOffset.y - 15, w: scaledRectSize.x + 30, h: scaledRectSize.y + 30}
   }
 
-  let savedImage;
-  function addClickableArea() {
-    var clickArea = new Konva.Rect({
-      fill: '#ff0000',
-      opacity: 0.5,
-      width: imageDisplayWidth,
-      height: imageDisplayHeight
-    });
+  function renderPointAt(x, y, color, layer) {
+    var newPoint = new Konva.Circle({
+      x: x,
+      y: y,
+      radius: 5,
+      fill: color
+    })
+    layer.add(newPoint)
+    layer.draw()
+  }
 
-    console.log(savedImage)
+  var stage; 
+  var layer; 
+  window.addEventListener("load", () => {
+    console.log("EGG")
     stage = new Konva.Stage({
       container: 'mainCanvas',
       width: imageDisplayWidth,
@@ -180,9 +177,109 @@ function App() {
     });
     layer = new Konva.Layer();
     stage.add(layer);
+  });
+
+  function showDemoResult() {
+    stage = new Konva.Stage({
+      container: 'mainCanvas',
+      width: imageDisplayWidth,
+      height: imageDisplayHeight
+    });
+    layer = new Konva.Layer();
+    stage.add(layer);
+
+    var URL = window.webkitURL || window.URL;
+    var url = URL.createObjectURL(savedImage);
+    setSavedImage(savedImage)
+    var img = new Image();
+    // edit this stuff
+    img.onload = function() {
+      var width = img.width;
+      var height = img.height;
+
+      var maxDimension = 1000;
+      var ratio = width > height ? (width / maxDimension) : (height / maxDimension)
+
+      // now load the Konva image
+      imageComponent = new Konva.Image({
+        draggable: true,
+        width: width/ratio,
+        height: height/ratio,
+        image: img,
+        x: 50,
+        y: 50
+      });
+      
+      var centerPoints = [[334, 266], [370, 298], [371, 346], [370, 390], [405, 424], [387, 469], [429, 497], [428, 543], [437, 589], [483, 608]]
+      var insertPoints = [[300, 274], [336, 297], [349, 320], [347, 415], [384, 451], [355, 480], [431, 531], [393, 542], [410, 610], [466, 638]]
+      var extractPoints = [[367, 257], [405, 300], [393, 372], [393, 365], [426, 397], [420, 458], [426, 462], [462, 545], [464, 568], [499, 577]]
+      
+      for (const point of insertPoints) {
+        renderPointAt(point[0] + 50, point[1] + 50, 'green', layer) // TODO remove these 50s for the real offset
+      }
+      for (const point of extractPoints) {
+        renderPointAt(point[0] + 50, point[1] + 50, 'red', layer)
+      }
+      for (const point of centerPoints) {
+        renderPointAt(point[0] + 50, point[1] + 50, 'blue', layer)
+      }
+
+      layer.add(imageComponent)
+      imageComponent.zIndex(1)
+      layer.draw()
+    }
+    img.src = url;
+  }
+
+  function addClickableArea() {  
+    stage = new Konva.Stage({
+      container: 'mainCanvas',
+      width: imageDisplayWidth,
+      height: imageDisplayHeight
+    });
+    layer = new Konva.Layer();
+    stage.add(layer);
+
+    var URL = window.webkitURL || window.URL;
+    var url = URL.createObjectURL(savedImage);
+    setSavedImage(savedImage)
+    var img = new Image();
+    // edit this stuff
+    img.onload = function() {
+      var width = img.width;
+      var height = img.height;
+
+      var maxDimension = 1000;
+      var ratio = width > height ? (width / maxDimension) : (height / maxDimension)
+
+      // now load the Konva image
+      imageComponent = new Konva.Image({
+        draggable: true,
+        width: width/ratio,
+        height: height/ratio,
+        image: img,
+        x: 50,
+        y: 50
+      });
+      imageComponent.on("click", (e) =>{
+        renderPointAt(e.evt.layerX, e.evt.layerY, 'red', layer)
+      });
+      layer.add(imageComponent)
+      imageComponent.zIndex(1)
+      layer.draw()
+    }
+    img.src = url;
+
     
-    layer.add(clickArea);
-    layer.draw();
+    /*stage = new Konva.Stage({
+      container: 'mainCanvas',
+      width: imageDisplayWidth,
+      height: imageDisplayHeight
+    });
+    layer = new Konva.Layer();
+    stage.add(layer);
+    
+    layer.add(clickArea);*/
   }
 
   const addSizingRect = () => {
@@ -213,6 +310,7 @@ function App() {
         height: 22,
         listening: false
       });
+
       layer.add(scaleIcon);
       layer.draw();
       enforceHandlePos()
@@ -276,11 +374,9 @@ function App() {
 
   var imageComponent
   const handleImageUpload = (event) => {
-    prepStageAndLayer()
-
     var URL = window.webkitURL || window.URL;
     var url = URL.createObjectURL(event.target.files[0]);
-    savedImage = event.target.files[0]
+    setSavedImage(event.target.files[0])
     var img = new Image();
     img.src = url;
 
@@ -412,6 +508,13 @@ function App() {
       if (toState == "scaleSuture") {
         addClickableArea()
       }
+      if (toState == "process") {
+        // Simulate processing delay for today's demo.
+        setTimeout(() => {
+          setActivePanel("results")
+          showDemoResult()
+        }, 1)
+      }
       setActivePanel(toState)
     }
   }
@@ -428,7 +531,8 @@ function App() {
         </div>
 
         <div id="mainCanvas" style={{position:"absolute", left:"535px"}}>
-
+          <Stage id="mainStage">
+          </Stage>
         </div>
 
       </div>
