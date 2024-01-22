@@ -167,7 +167,8 @@ function App() {
   }
 
   var stage; 
-  var layer; 
+  var layer;
+
   window.addEventListener("load", () => {
     console.log("EGG")
     stage = new Konva.Stage({
