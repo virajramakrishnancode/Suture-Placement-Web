@@ -166,7 +166,7 @@ function App() {
   }
 
   function wipeLayer() {
-    //stageRef.current.destroyChildren();
+    layerRef.current.destroyChildren();
   }
 
   function renderPointAt(x, y, color) {
@@ -318,11 +318,11 @@ function App() {
         listening: false
       });
 
-      console.log(imageObj.src)
+      console.log(imageObj)
       layerRef.current.add(scaleIcon);
       enforceHandlePos()
       console.log(stageRef)
-      stageRef.current.draw();
+      stageRef.current.draw();  
     }
     imageObj.src = require('./images/scale.png');
 
@@ -440,7 +440,7 @@ function App() {
       layerRef.current.add(activeImage.current);
       stageRef.current.draw();
 
-      addSizingRect(layerRef.current);
+      addSizingRect();
 
       changePanel("locateWound");
     }
@@ -490,8 +490,18 @@ function App() {
   const [showCover, setShowCover] = useState(true);
   function prepareStage() {
     console.log("Page has loaded.")
-    stageRef.current.add(layerRef.current);
-    wipeLayer();
+
+    var newStage = new Konva.Stage({
+      container: 'mainCanvas',
+      width: imageDisplayWidth,
+      height: imageDisplayHeight
+    });
+    var newLayer = new Konva.Layer();
+
+    stageRef.current = newStage
+    stageRef.current.add(newLayer);
+    layerRef.current = newLayer;
+
     setShowCover(false);
   }
 
@@ -510,11 +520,6 @@ function App() {
         </div>
 
         <div id="mainCanvas" style={{position:"absolute", left:"535px"}}>
-          <Stage ref={stageRef} id="mainStage">
-            <Layer ref={layerRef} id="mainLayer">
-
-            </Layer>
-          </Stage>
         </div>
 
       </div>
