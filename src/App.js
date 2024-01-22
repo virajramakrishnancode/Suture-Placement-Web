@@ -39,6 +39,12 @@ function App() {
 
   const point1Pos = useRef({x:0, y:0});
   const point2Pos = useRef({x:0, y:0});
+  const finalPoints = useRef(null);
+
+  const activeImage = useRef(null);
+
+  const stageRef = useRef(null);
+  const layerRef = useRef(null);
 
   const handleScaleInputChange = (event) => {
     const { name, value } = event.target;
@@ -60,12 +66,6 @@ function App() {
     process : 4, 
     results : 5
   };
-
-  /*const recordRectPos = () => {
-    console.log(imageComponent);
-    console.log(sizingRect)
-    console.log("FastSAM Rect Data:", extrapolateRectPos(imageComponent.position(), sizingRect.position(), sizingRect.size(), imageComponent.scale()))
-  }*/
 
   const stepToInfo = {
     uploadImage : {
@@ -90,12 +90,12 @@ function App() {
     process : {
       name : "Processing",
       desc : "We're processing your image. Give us a moment.",
-      body : (<><img id="task1" width="24px" src={active} alt="" /> <strong>Wait</strong> just a moment while we find a good suture plan. Don't leave the page.</>)
+      body : (<><img id="task1" width="24px" src={active} alt="" /> <strong>Wait</strong> while we find a good suture plan.</>)
     }, 
     results : {
       name : "Results",
       desc : "All done! You can view the suture plan on the right.",
-      body : (<><h3><img width="24px" src={angleIcon} alt="" /> Save as .jpg</h3><br/>
+      body : (<><h3><img width="24px" src={angleIcon} alt="" onClick={handleExport}/> Save as .jpg</h3><br/>
       <h3><img width="24px" src={angleIcon} alt="" /> Restart</h3><br/>
       <h3><img width="24px" src={angleIcon} alt="" /> Give Feedback</h3><br/></>)
     }
@@ -152,7 +152,6 @@ function App() {
   // Adds a few pixels extra just in case of scaling weirdness which can happen sometimes
   // TODO: Prevent OOB returns (like under 0 or above img size)
   const extrapolateRectPos = (imagePos, rectPos, rectSize, imageScale) => {
-    console.log(imagePos, rectPos, rectSize, imageScale)
     var rectOffset = {x: rectPos.x - imagePos.x, y: rectPos.y - imagePos.y} // Difference between rect's pos and image's pos.
     var scaledOffset = {x: rectOffset.x / imageScale.x, y: rectOffset.y / imageScale.y} // Rect's position on actual image.
     var scaledRectSize = {x: rectSize.width / imageScale.x, y: rectSize.height / imageScale.y}
@@ -163,43 +162,30 @@ function App() {
   const extrapolateSutureLength = () => {
     let xDiff = point1Pos.current.x - point2Pos.current.x;
     let yDiff = point1Pos.current.y - point2Pos.current.y;
-    console.log(xDiff, yDiff, Math.hypot(xDiff, yDiff))
     return Math.hypot(xDiff, yDiff);
   }
 
-  function renderPointAt(x, y, color, layer) {
+  function wipeLayer() {
+    //stageRef.current.destroyChildren();
+  }
+
+  function renderPointAt(x, y, color) {
     let newPoint = new Konva.Circle({
       x: x,
       y: y,
       radius: 5,
       fill: color
     })
-    layer.add(newPoint)
-    layer.draw()
+    layerRef.current.add(newPoint)
+    stageRef.current.draw()
   }
 
-  var stage; 
-  var layer;
+  async function fetchPoints() {
+    finalPoints.current = await getResultPointsFor(recordedRectPos.current, extrapolateSutureLength(), savedImage.name);
+  }
 
-  window.addEventListener("load", () => {
-    console.log("EGG")
-    stage = new Konva.Stage({
-      container: 'mainCanvas',
-      width: imageDisplayWidth,
-      height: imageDisplayHeight
-    });
-    layer = new Konva.Layer();
-    stage.add(layer);
-  });
-
-  function showDemoResult() {
-    stage = new Konva.Stage({
-      container: 'mainCanvas',
-      width: imageDisplayWidth,
-      height: imageDisplayHeight
-    });
-    layer = new Konva.Layer();
-    stage.add(layer);
+  function showFinalResult() {
+    wipeLayer();
 
     var URL = window.webkitURL || window.URL;
     var url = URL.createObjectURL(savedImage);
@@ -207,11 +193,12 @@ function App() {
     var img = new Image();
     // edit this stuff
     img.onload = async function() {
+      console.log("Image has loaded.")
       var width = img.width;
       var height = img.height;
 
       // now load the Konva image
-      imageComponent = new Konva.Image({
+      activeImage.current = new Konva.Image({
         draggable: false,
         width: width,
         height: height,
@@ -219,29 +206,26 @@ function App() {
         x: 50,
         y: 50
       });
-      
-      console.log(recordedRectPos.current);
-      var resultData = await getResultPointsFor(recordedRectPos.current, extrapolateSutureLength(), savedImage);
 
-      var centerPoints = resultData[0]
-      var insertPoints = resultData[1]
-      var extractPoints = resultData[2]
+      var centerPoints = finalPoints.current[0]
+      var insertPoints = finalPoints.current[1]
+      var extractPoints = finalPoints.current[2]
+
+      console.log("Points are:", centerPoints, insertPoints, extractPoints)
       
       for (const point of insertPoints) {
-        renderPointAt(point[1] + 50, point[0] + 50, 'green', layer) // TODO remove these 50s for the real offset
+        renderPointAt(point[1] + 50, point[0] + 50, 'green') // TODO remove these 50s for the real offset
       }
       for (const point of extractPoints) {
-        renderPointAt(point[1] + 50, point[0] + 50, 'red', layer)
+        renderPointAt(point[1] + 50, point[0] + 50, 'red')
       }
       for (const point of centerPoints) {
-        renderPointAt(point[1] + 50, point[0] + 50, 'blue', layer)
+        renderPointAt(point[1] + 50, point[0] + 50, 'blue')
       }
 
-      layer.add(imageComponent)
-      console.log("A")
-      imageComponent.zIndex(0)
-      console.log("B")
-      layer.draw()
+      layerRef.current.add(activeImage.current)
+      activeImage.current.zIndex(0)
+      stageRef.current.draw()
     }
     img.src = url;
   }
@@ -266,13 +250,7 @@ function App() {
   }
 
   function addClickableArea() {  
-    stage = new Konva.Stage({
-      container: 'mainCanvas',
-      width: imageDisplayWidth,
-      height: imageDisplayHeight
-    });
-    layer = new Konva.Layer();
-    stage.add(layer);
+    wipeLayer()
 
     var URL = window.webkitURL || window.URL;
     var url = URL.createObjectURL(savedImage);
@@ -284,7 +262,7 @@ function App() {
       var height = img.height;
 
       // now load the Konva image
-      imageComponent = new Konva.Image({
+      activeImage.current = new Konva.Image({
         draggable: true,
         width: width,
         height: height,
@@ -292,21 +270,21 @@ function App() {
         x: 50,
         y: 50
       });
-      imageComponent.on("click", (e) =>{
-        renderPointAt(e.evt.layerX, e.evt.layerY, 'red', layer)
+      activeImage.current.on("click", (e) =>{
+        renderPointAt(e.evt.layerX, e.evt.layerY, 'red')
 
         console.log(point1Pos.current)
         if (point1Pos.current.x == 0) { // TODO have a better way of checking if not set, also let people replace points if they miss
           point1Pos.current = {x: e.evt.layerX, y: e.evt.layerY}
-          console.log("Point 1 placed at ", e.evt.layerX, e.evt.layerY)
+          console.log("Scaling Point 1 @ ", e.evt.layerX, e.evt.layerY)
         } else {
           point2Pos.current = {x: e.evt.layerX, y: e.evt.layerY}
-          console.log("Point 2 placed at ", e.evt.layerX, e.evt.layerY)
+          console.log("Scaling Point 2 @ ", e.evt.layerX, e.evt.layerY)
         }
       });
-      layer.add(imageComponent)
-      imageComponent.zIndex(1)
-      layer.draw()
+      layerRef.current.add(activeImage.current)
+      activeImage.current.zIndex(1)
+      stageRef.current.draw()
     }
     img.src = url;
   }
@@ -340,9 +318,11 @@ function App() {
         listening: false
       });
 
-      layer.add(scaleIcon);
-      layer.draw();
+      console.log(imageObj.src)
+      layerRef.current.add(scaleIcon);
       enforceHandlePos()
+      console.log(stageRef)
+      stageRef.current.draw();
     }
     imageObj.src = require('./images/scale.png');
 
@@ -380,26 +360,24 @@ function App() {
     });
     sizingRect.on('mouseout', (e) => {
       sizingRect.fill("#4100A3");
-      console.log(e)
-      recordedRectPos.current = extrapolateRectPos(imageComponent.position(), sizingRect.position(), sizingRect.size(), imageComponent.scale());
+      recordedRectPos.current = extrapolateRectPos(activeImage.current.position(), sizingRect.position(), sizingRect.size(), activeImage.current.scale());
     });
     handle.on('mouseover', () => {
       handle.fill("#8433ff");
     });
     handle.on('mouseout', () => {
       handle.fill("#4100A3");
-      recordedRectPos.current = extrapolateRectPos(imageComponent.position(), sizingRect.position(), sizingRect.size(), imageComponent.scale());
+      recordedRectPos.current = extrapolateRectPos(activeImage.current.position(), sizingRect.position(), sizingRect.size(), activeImage.current.scale());
     });
 
-    layer.add(sizingRect);
-    layer.add(handle);
+    layerRef.current.add(sizingRect);
+    layerRef.current.add(handle);
 
     enforceHandlePos();
 
-    layer.draw();
+    stageRef.current.draw();
   }
 
-  var imageComponent
   const handleImageUpload = (event) => {
     var URL = window.webkitURL || window.URL;
     var url = URL.createObjectURL(event.target.files[0]);
@@ -413,7 +391,7 @@ function App() {
       var height = img.height;
 
       // now load the Konva image
-      imageComponent = new Konva.Image({
+      activeImage.current = new Konva.Image({
         draggable: true,
         width: width,
         height: height,
@@ -424,19 +402,19 @@ function App() {
 
       const enforceVisibility = () => {
         var minVisible = 400 // Minimum visible pix in each direction.
-        imageComponent.y(Math.max(imageComponent.y(), imageComponent.height() * imageComponent.scale().y * -1 + minVisible))
-        imageComponent.x(Math.max(imageComponent.x(), imageComponent.width() *  imageComponent.scale().x * -1 + minVisible))
+        activeImage.current.y(Math.max(activeImage.current.y(), activeImage.current.height() * activeImage.current.scale().y * -1 + minVisible))
+        activeImage.current.x(Math.max(activeImage.current.x(), activeImage.current.width() *  activeImage.current.scale().x * -1 + minVisible))
 
-        imageComponent.y(Math.min(imageComponent.y(), imageDisplayHeight - minVisible))
-        imageComponent.x(Math.min(imageComponent.x(), imageDisplayWidth - minVisible))
+        activeImage.current.y(Math.min(activeImage.current.y(), imageDisplayHeight - minVisible))
+        activeImage.current.x(Math.min(activeImage.current.x(), imageDisplayWidth - minVisible))
       }
 
-      imageComponent.on('dragmove', () => {
+      activeImage.current.on('dragmove', () => {
         enforceVisibility();
       });
-      imageComponent.on('wheel', (e) => {
+      activeImage.current.on('wheel', (e) => {
         // Rescale.
-        var currentScale = imageComponent.scale();
+        var currentScale = activeImage.current.scale();
 
         var minScale = 0.5;
         var maxScale = 2.5;
@@ -448,101 +426,80 @@ function App() {
           return;
         }
 
-        imageComponent.scale({x: targetScale, y: targetScale});
+        activeImage.current.scale({x: targetScale, y: targetScale});
         
         // Change position so it scales from center.
-        var diffX = change * -0.5 * imageComponent.width();
-        var diffY = change * -0.5 * imageComponent.height();
-        imageComponent.x(imageComponent.x() + diffX);
-        imageComponent.y(imageComponent.y() + diffY);
+        var diffX = change * -0.5 * activeImage.current.width();
+        var diffY = change * -0.5 * activeImage.current.height();
+        activeImage.current.x(activeImage.current.x() + diffX);
+        activeImage.current.y(activeImage.current.y() + diffY);
 
         enforceVisibility();
       })
 
-      layer.add(imageComponent);
-      layer.draw();
+      layerRef.current.add(activeImage.current);
+      stageRef.current.draw();
 
-      addSizingRect();
+      addSizingRect(layerRef.current);
 
-      setActivePanel("locateWound");
+      changePanel("locateWound");
     }
   };
 
-  const handleSavePoints = () => {
-    setSavedPoints([...points]);
-
-  };
-
-  const handleSaveTrace = async () => {
-    setSavedTrace([...tracePoints]);
-
-    try {
-
-      const requestData = {
-        scaleValues: inputValues,
-        savedPoints: savedPoints,
-        tracePoints: tracePoints
-      };
-      const response = await fetch('http://localhost:5000/get_wound_parameters', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestData)
-      });
-
-      const data = await response.json();
-      console.log('Response:', data);
-
-      // process response - need to get the scroll and set output points accordingly
-      let top, left;
-      ({ top, left } = outputRef.current.getBoundingClientRect())
-
-      console.log(top);
-
-      const convertToPoint = (point) => {
-        const newPoint = {
-          x: point[0],
-          y: point[1],
-          displayX: point[0] + left + window.scrollX,
-          displayY: point[1] + top + window.scrollY
-        };
-
-        return newPoint;
-      }
-
-      let insertPointData = data['insertion_points'].map(convertToPoint);
-      let extractPointData = data['extraction_points'].map(convertToPoint);
-      let centerPointData = data['center_points'].map(convertToPoint);
-
-      console.log(insertPointData)
-
-      setCenterPoints([...centerPointData])
-      setInsertionPoints([...insertPointData])
-      setExtractionPoints([...extractPointData])
-
-    } catch (error) {
-      console.error('Error:', error);
+  async function changePanel(toState) {
+    setActivePanel(toState)
+    if (toState == "scaleSuture") {
+      addClickableArea()
     }
-    
-  };
+    if (toState == "process") {
+      await fetchPoints()
+      console.log("Results are in!")
+      changePanel("results")
+    }
+    if (toState == "results") {
+      showFinalResult()
+      console.log("Showing final results.")
+    }
+  }
 
+  // PICKUP POINT: Move this into the above function so we can call showFinalResult when updating the active panel
   function composeStateSet(toState) {
-    return function() {
-      if (toState == "scaleSuture") {
-        addClickableArea()
-      }
-      if (toState == "process") {
-        // Simulate processing delay for today's demo.
-        setActivePanel("results")
-        showDemoResult()
-      }
-      setActivePanel(toState)
+    return async function() {
+      await changePanel(toState)
     }
+  }
+
+  // function from https://stackoverflow.com/a/15832662/512042
+  function downloadURI(uri, name) {
+    var link = document.createElement('a');
+    link.download = name;
+    link.href = uri;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // function from https://konvajs.org/docs/react/Canvas_Export.html
+  function handleExport() {
+    console.log(stageRef.current)
+    const uri = stageRef.current.toDataURL();
+    console.log(uri);
+    downloadURI(uri, 'stage.png');
+  };
+
+  const [showCover, setShowCover] = useState(true);
+  function prepareStage() {
+    console.log("Page has loaded.")
+    stageRef.current.add(layerRef.current);
+    wipeLayer();
+    setShowCover(false);
   }
 
   return (
     <>
+      { showCover ? <div className="cover_panel">
+        <button onClick={prepareStage}>Press</button>
+      </div> : null }
       <div className="body" style={{ width : '1920px', height:'1080px'}}>
         <div className="sideinfo">
           {sidebarContentsFor(activePanel)}
@@ -553,7 +510,10 @@ function App() {
         </div>
 
         <div id="mainCanvas" style={{position:"absolute", left:"535px"}}>
-          <Stage id="mainStage">
+          <Stage ref={stageRef} id="mainStage">
+            <Layer ref={layerRef} id="mainLayer">
+
+            </Layer>
           </Stage>
         </div>
 
