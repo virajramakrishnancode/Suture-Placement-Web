@@ -35,6 +35,11 @@ function App() {
 
   const [savedImage, setSavedImage] = useState(null);
 
+  const recordedRectPos = useRef({x:0, y:0, w:0, h:0});
+
+  const point1Pos = useRef({x:0, y:0});
+  const point2Pos = useRef({x:0, y:0});
+
   const handleScaleInputChange = (event) => {
     const { name, value } = event.target;
     setInputValues((prevFormData) => ({
@@ -146,17 +151,24 @@ function App() {
   // The start and end coordinates of the rectangle, in pixels
   // Adds a few pixels extra just in case of scaling weirdness which can happen sometimes
   // TODO: Prevent OOB returns (like under 0 or above img size)
-  let recordedRectPos;
-  var sizingRect;
   const extrapolateRectPos = (imagePos, rectPos, rectSize, imageScale) => {
+    console.log(imagePos, rectPos, rectSize, imageScale)
     var rectOffset = {x: rectPos.x - imagePos.x, y: rectPos.y - imagePos.y} // Difference between rect's pos and image's pos.
     var scaledOffset = {x: rectOffset.x / imageScale.x, y: rectOffset.y / imageScale.y} // Rect's position on actual image.
     var scaledRectSize = {x: rectSize.width / imageScale.x, y: rectSize.height / imageScale.y}
-    return {x: scaledOffset.x - 15, y: scaledOffset.y - 15, w: scaledRectSize.x + 30, h: scaledRectSize.y + 30}
+    return {x: scaledOffset.x, y: scaledOffset.y, w: scaledRectSize.x, h: scaledRectSize.y}
+  }
+
+  // TODO This needs to change based on image scale.
+  const extrapolateSutureLength = () => {
+    let xDiff = point1Pos.current.x - point2Pos.current.x;
+    let yDiff = point1Pos.current.y - point2Pos.current.y;
+    console.log(xDiff, yDiff, Math.hypot(xDiff, yDiff))
+    return Math.hypot(xDiff, yDiff);
   }
 
   function renderPointAt(x, y, color, layer) {
-    var newPoint = new Konva.Circle({
+    let newPoint = new Konva.Circle({
       x: x,
       y: y,
       radius: 5,
@@ -193,42 +205,63 @@ function App() {
     setSavedImage(savedImage)
     var img = new Image();
     // edit this stuff
-    img.onload = function() {
+    img.onload = async function() {
       var width = img.width;
       var height = img.height;
 
-      var maxDimension = 1000;
-      var ratio = width > height ? (width / maxDimension) : (height / maxDimension)
-
       // now load the Konva image
       imageComponent = new Konva.Image({
-        draggable: true,
-        width: width/ratio,
-        height: height/ratio,
+        draggable: false,
+        width: width,
+        height: height,
         image: img,
         x: 50,
         y: 50
       });
       
-      var centerPoints = [[334, 266], [370, 298], [371, 346], [370, 390], [405, 424], [387, 469], [429, 497], [428, 543], [437, 589], [483, 608]]
-      var insertPoints = [[300, 274], [336, 297], [349, 320], [347, 415], [384, 451], [355, 480], [431, 531], [393, 542], [410, 610], [466, 638]]
-      var extractPoints = [[367, 257], [405, 300], [393, 372], [393, 365], [426, 397], [420, 458], [426, 462], [462, 545], [464, 568], [499, 577]]
+      console.log(recordedRectPos.current);
+      var resultData = await getResultPointsFor(recordedRectPos.current, extrapolateSutureLength(), savedImage);
+
+      var centerPoints = resultData[0]
+      var insertPoints = resultData[1]
+      var extractPoints = resultData[2]
       
       for (const point of insertPoints) {
-        renderPointAt(point[0] + 50, point[1] + 50, 'green', layer) // TODO remove these 50s for the real offset
+        renderPointAt(point[1] + 50, point[0] + 50, 'green', layer) // TODO remove these 50s for the real offset
       }
       for (const point of extractPoints) {
-        renderPointAt(point[0] + 50, point[1] + 50, 'red', layer)
+        renderPointAt(point[1] + 50, point[0] + 50, 'red', layer)
       }
       for (const point of centerPoints) {
-        renderPointAt(point[0] + 50, point[1] + 50, 'blue', layer)
+        renderPointAt(point[1] + 50, point[0] + 50, 'blue', layer)
       }
 
       layer.add(imageComponent)
-      imageComponent.zIndex(1)
+      console.log("A")
+      imageComponent.zIndex(0)
+      console.log("B")
       layer.draw()
     }
     img.src = url;
+  }
+
+  async function getResultPointsFor(rectData, sutureLength, imgPath) {
+    const requestData = {
+      rectData: rectData,
+      sutureLength: sutureLength,
+      imgPath: imgPath
+    };
+    const response = await fetch('http://localhost:5000/get_suture_placement', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestData)
+    });
+    console.log('Response:', response);
+    const data = await response.json();
+    console.log('Response Data:', data);
+    return data
   }
 
   function addClickableArea() {  
@@ -249,37 +282,32 @@ function App() {
       var width = img.width;
       var height = img.height;
 
-      var maxDimension = 1000;
-      var ratio = width > height ? (width / maxDimension) : (height / maxDimension)
-
       // now load the Konva image
       imageComponent = new Konva.Image({
         draggable: true,
-        width: width/ratio,
-        height: height/ratio,
+        width: width,
+        height: height,
         image: img,
         x: 50,
         y: 50
       });
       imageComponent.on("click", (e) =>{
         renderPointAt(e.evt.layerX, e.evt.layerY, 'red', layer)
+
+        console.log(point1Pos.current)
+        if (point1Pos.current.x == 0) { // TODO have a better way of checking if not set, also let people replace points if they miss
+          point1Pos.current = {x: e.evt.layerX, y: e.evt.layerY}
+          console.log("Point 1 placed at ", e.evt.layerX, e.evt.layerY)
+        } else {
+          point2Pos.current = {x: e.evt.layerX, y: e.evt.layerY}
+          console.log("Point 2 placed at ", e.evt.layerX, e.evt.layerY)
+        }
       });
       layer.add(imageComponent)
       imageComponent.zIndex(1)
       layer.draw()
     }
     img.src = url;
-
-    
-    /*stage = new Konva.Stage({
-      container: 'mainCanvas',
-      width: imageDisplayWidth,
-      height: imageDisplayHeight
-    });
-    layer = new Konva.Layer();
-    stage.add(layer);
-    
-    layer.add(clickArea);*/
   }
 
   const addSizingRect = () => {
@@ -291,7 +319,7 @@ function App() {
       stroke: 'black',
       strokeWidth: 2,
     })
-    sizingRect = new Konva.Rect({
+    let sizingRect = new Konva.Rect({
       draggable: true,
       fill: '#4100A3',
       opacity: 0.2,
@@ -349,20 +377,18 @@ function App() {
     sizingRect.on('mouseover', () => {
       sizingRect.fill("#8433ff");
     });
-    sizingRect.on('mouseout', () => {
+    sizingRect.on('mouseout', (e) => {
       sizingRect.fill("#4100A3");
+      console.log(e)
+      recordedRectPos.current = extrapolateRectPos(imageComponent.position(), sizingRect.position(), sizingRect.size(), imageComponent.scale());
     });
     handle.on('mouseover', () => {
       handle.fill("#8433ff");
     });
     handle.on('mouseout', () => {
       handle.fill("#4100A3");
+      recordedRectPos.current = extrapolateRectPos(imageComponent.position(), sizingRect.position(), sizingRect.size(), imageComponent.scale());
     });
-
-    handle.on('wheel', () => {
-      recordedRectPos = extrapolateRectPos(imageComponent.position(), sizingRect.position(), sizingRect.size(), imageComponent.scale())
-      console.log(recordedRectPos)
-    })
 
     layer.add(sizingRect);
     layer.add(handle);
@@ -385,14 +411,11 @@ function App() {
       var width = img.width;
       var height = img.height;
 
-      var maxDimension = 1000;
-      var ratio = width > height ? (width / maxDimension) : (height / maxDimension)
-
       // now load the Konva image
       imageComponent = new Konva.Image({
         draggable: true,
-        width: width/ratio,
-        height: height/ratio,
+        width: width,
+        height: height,
         image: img,
         x: 50,
         y: 50
@@ -459,7 +482,7 @@ function App() {
         savedPoints: savedPoints,
         tracePoints: tracePoints
       };
-      const response = await fetch('http://localhost:8000/get_wound_parameters', {
+      const response = await fetch('http://localhost:5000/get_wound_parameters', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -510,10 +533,8 @@ function App() {
       }
       if (toState == "process") {
         // Simulate processing delay for today's demo.
-        setTimeout(() => {
-          setActivePanel("results")
-          showDemoResult()
-        }, 5000)
+        setActivePanel("results")
+        showDemoResult()
       }
       setActivePanel(toState)
     }
