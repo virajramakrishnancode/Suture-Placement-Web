@@ -10,6 +10,7 @@ import { Stage, Layer } from 'react-konva';
 import useImage from 'use-image';
 import Konva from 'konva';
 import { render } from '@testing-library/react';
+import logo from './images/logo.png';
 
 function App() {
   const [selectedImage, setSelectedImage] = useState(null);
@@ -169,6 +170,17 @@ function App() {
     layerRef.current.destroyChildren();
   }
 
+  function renderLineBetween(x1, y1, x2, y2, color, isDashed) {
+    let newLine = new Konva.Line({
+      points: [x1 + 50, y1 + 50, x2 + 50, y2 + 50],
+      strokeWidth: 2,
+      stroke: color,
+      dash: (isDashed ? [1, 1, 0] : null)
+    })
+    layerRef.current.add(newLine)
+    stageRef.current.draw()
+  }
+
   function renderPointAt(x, y, color) {
     let newPoint = new Konva.Circle({
       x: x,
@@ -207,8 +219,8 @@ function App() {
         y: 50
       });
 
-      var centerPoints = finalPoints.current[0]
-      var insertPoints = finalPoints.current[1]
+      var centerPoints = finalPoints.current[1]
+      var insertPoints = finalPoints.current[0]
       var extractPoints = finalPoints.current[2]
 
       console.log("Points are:", centerPoints, insertPoints, extractPoints)
@@ -219,8 +231,15 @@ function App() {
       for (const point of extractPoints) {
         renderPointAt(point[1] + 50, point[0] + 50, 'red')
       }
-      for (const point of centerPoints) {
+      /*for (const point of centerPoints) {
         renderPointAt(point[1] + 50, point[0] + 50, 'blue')
+      }*/
+      // Draw lines
+      for (let i = 0; i < insertPoints.length; i++) {
+        renderLineBetween(insertPoints[i][1], insertPoints[i][0], extractPoints[i][1], extractPoints[i][0], 'green', true)
+        if (i + 1 < insertPoints.length) {
+          renderLineBetween(extractPoints[i][1], extractPoints[i][0], insertPoints[i + 1][1], insertPoints[i + 1][0], 'red', false)
+        }
       }
 
       layerRef.current.add(activeImage.current)
@@ -507,8 +526,14 @@ function App() {
 
   return (
     <>
-      { showCover ? <div className="cover_panel">
-        <button onClick={prepareStage}>Press</button>
+      { showCover ? <div style={{paddingTop:"40px", textAlign:"center"}} className="cover_panel">
+        <text className="rainbow_text">Extending Automated Suture Placing to 3D</text>
+        <br/>
+        <h4 style={{paddingTop:"40px", paddingBottom:"40px",fontSize:"30px"}}>Viraj Ramakrishnan, Harshika Jalan, Miller Hollinger, Harsha Polavaram, Julia Isaac, Hansoul Kim, Aviv Adler, Prof. Ken Goldberg </h4>
+        <br/>
+        <button className="beginButton" onClick={prepareStage}>Begin</button>
+        <br/>
+        <a href="https://autolab.berkeley.edu/" target="_blank"><img style={{position: "fixed", bottom:"0px", left:"0px"}} src={logo}></img></a>
       </div> : null }
       <div className="body" style={{ width : '1920px', height:'1080px'}}>
         <div className="sideinfo">

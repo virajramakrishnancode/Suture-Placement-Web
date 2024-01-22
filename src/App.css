@@ -83,6 +83,19 @@
   cursor: pointer;
 }
 
+/* css from https://welearncode.com/rainbow-text/ */
+.rainbow_text {
+  margin-top: 0px;
+  margin-bottom: 10px;
+  font-family: sans-serif;
+  font-weight: 1000;
+  font-size: 6rem;
+  background: linear-gradient(to right, #4100A3, #2196f3);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 h1 {
   margin-top: 0;
   margin-bottom: 0;
@@ -131,6 +144,18 @@ h3 {
   font-style: normal;
   font-weight: 550;
   line-height: normal;
+}
+
+.beginButton {
+  display: inline-block;
+  width: 300px;
+  font-weight: 600;
+  height: 100px;
+  font-size: 50px;
+  color: white;
+  border-radius: 20px;
+  box-shadow: 5px 5px 5px black;
+  background: linear-gradient(to right, #4100A3, #2196f3);
 }
 
 .bottomArea {
