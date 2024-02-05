@@ -154,8 +154,42 @@ h3 {
   font-size: 50px;
   color: white;
   border-radius: 20px;
-  box-shadow: 5px 5px 5px black;
   background: linear-gradient(to right, #4100A3, #2196f3);
+}
+
+.confirmButton {
+  display: inline-block;
+  width: 200px;
+  font-weight: 400;
+  height: 50px;
+  font-size: 25px;
+  color: white;
+  border-radius: 20px;
+  background: linear-gradient(to right, #4100A3, #2196f3);
+}
+
+.resetButton {
+  display: inline-block;
+  width: 200px;
+  font-weight: 400;
+  height: 50px;
+  font-size: 25px;
+  color: white;
+  border-radius: 20px;
+  background: linear-gradient(to right, #a3007a, #f321d7);
+}
+
+.backButton {
+  display: inline-block;
+  width: 150px;
+  font-weight: 600;
+  height: 40px;
+  font-size: 20px;
+  color: white;
+  border-radius: 20px;
+  background: linear-gradient(to right, #a3007a, #f321d7);
+  flex-direction: row;
+  justify-content: "flex-end";
 }
 
 .bottomArea {

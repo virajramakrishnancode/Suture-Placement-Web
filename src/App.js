@@ -38,8 +38,9 @@ function App() {
 
   const recordedRectPos = useRef({x:0, y:0, w:0, h:0});
 
-  const point1Pos = useRef({x:0, y:0});
-  const point2Pos = useRef({x:0, y:0});
+  const point1 = useRef(null);
+  const point2 = useRef(null);
+
   const finalPoints = useRef(null);
 
   const activeImage = useRef(null);
@@ -68,6 +69,14 @@ function App() {
     results : 5
   };
 
+  const orderToStep = {
+    1 : "uploadImage", 
+    2 : "locateWound", 
+    3 : "scaleSuture", 
+    4 : "process", 
+    5 : "results"
+  };
+
   const stepToInfo = {
     uploadImage : {
       name : "Upload Image",
@@ -79,14 +88,16 @@ function App() {
       desc : "Help us find the wound you plan to suture.",
       body : (<><img id="task1" width="24px" src={active} alt="" /> <strong>Select</strong> a rectangle around the target wound.<br/>
       <img id="task2" width="24px" src={inactive} alt="" /> <strong>Confirm</strong> your selection.<br/>
-      <button onClick={composeStateSet("scaleSuture")}><strong>Confirm Rectangle</strong></button></>) // onclick goes here
+      <button class="confirmButton" onClick={composeStateSet("scaleSuture")}><strong>Confirm</strong></button></>) // onclick goes here
     }, 
     scaleSuture : {
       name : "Scale Suture",
       desc : "Show us how long an example suture should be.",
       body : (<><img id="task1" width="24px" src={active} alt="" /> <strong>Click</strong> a spot you might start a suture.<br/>
       <img id="task2" width="24px" src={inactive} alt="" /> <strong>Click</strong> a spot you might end that suture.<br/>
-      <button onClick={composeStateSet("process")}><strong>Confirm Scaling</strong></button></>)
+      <img id="task3" width="24px" src={inactive} alt="" /> <strong>Confirm</strong> your chosen reference locations.<br/>
+      <button class="confirmButton" onClick={composeStateSet("process")}><strong>Confirm</strong></button><br/>
+      <button class="resetButton" onClick={resetSuturePointLocations}><strong>Reset Points</strong></button></>) // reset points goes here
     },
     process : {
       name : "Processing",
@@ -105,7 +116,11 @@ function App() {
   function sidebarContentsFor(panel) {
     return (<><h1>
       {stepToInfo[panel].name}
+      {panel != "uploadImage" ? <button class="backButton" onClick={goBack(panel)}>
+        Step Back
+      </button> : null}
     </h1>
+    
     <div className="helperText" style={{marginBottom:"49px"}}>
       {stepToInfo[panel].desc}
     </div>
@@ -115,17 +130,28 @@ function App() {
     <div className="bottomArea">
       <div className="bottomAreaContent" style={{marginLeft:"11px", marginTop:"4px"}}>
         <div className="vertical" style={{left:"22px", top:"16px", zIndex:"-1"}}></div>
-        <h2 id="majorTask1"><img onClick={composeStateSet("uploadImage")} width="24px"  src={{1 : active,   2 : done,     3: done,      4: done,        5: done}[stepToOrder[panel]]} alt="" /> Upload Image</h2><br/>
-        <h2 id="majorTask2"><img onClick={composeStateSet("locateWound")} width="24px"  src={{1 : inactive, 2 : active,   3: done,      4: done,        5: done}[stepToOrder[panel]]} alt="" /> Locate Wound</h2><br/>
-        <h2 id="majorTask3"><img onClick={composeStateSet("scaleSuture")} width="24px"  src={{1 : inactive, 2 : inactive, 3: active,    4: done,        5: done}[stepToOrder[panel]]} alt="" /> Scale Suture</h2><br/>
-        <h2 id="majorTask4"><img onClick={composeStateSet("process")} width="24px"      src={{1 : inactive, 2 : inactive, 3: inactive,  4: active,      5: done}[stepToOrder[panel]]} alt="" /> Process</h2><br/>
-        <h2 id="majorTask5"><img onClick={composeStateSet("results")} width="24px"      src={{1 : inactive, 2 : inactive, 3: inactive,  4: inactive,    5: done}[stepToOrder[panel]]} alt="" /> Results</h2><br/>
+        <h2 id="majorTask1"><img width="24px"  src={{1 : active,   2 : done,     3: done,      4: done,        5: done}[stepToOrder[panel]]} alt="" /> Upload Image</h2><br/>
+        <h2 id="majorTask2"><img width="24px"  src={{1 : inactive, 2 : active,   3: done,      4: done,        5: done}[stepToOrder[panel]]} alt="" /> Locate Wound</h2><br/>
+        <h2 id="majorTask3"><img width="24px"  src={{1 : inactive, 2 : inactive, 3: active,    4: done,        5: done}[stepToOrder[panel]]} alt="" /> Scale Suture</h2><br/>
+        <h2 id="majorTask4"><img width="24px"  src={{1 : inactive, 2 : inactive, 3: inactive,  4: active,      5: done}[stepToOrder[panel]]} alt="" /> Process</h2><br/>
+        <h2 id="majorTask5"><img width="24px"  src={{1 : inactive, 2 : inactive, 3: inactive,  4: inactive,    5: done}[stepToOrder[panel]]} alt="" /> Results</h2><br/>
       </div>
     </div></>)
   };
 
   var imageDisplayWidth = 1385
   var imageDisplayHeight = 1080
+
+  function resetSuturePointLocations() {
+    if (point1.current != null) {
+      point1.current.destroy();
+      point1.current = null;
+    }
+    if (point2.current != null) {
+      point2.current.destroy();
+      point2.current = null;
+    }
+  }
 
   function mainAreaContentsFor(panel) {
     return {
@@ -161,8 +187,8 @@ function App() {
 
   // TODO This needs to change based on image scale.
   const extrapolateSutureLength = () => {
-    let xDiff = point1Pos.current.x - point2Pos.current.x;
-    let yDiff = point1Pos.current.y - point2Pos.current.y;
+    let xDiff = point1.current.x() - point2.current.x();
+    let yDiff = point1.current.y() - point2.current.y();
     return Math.hypot(xDiff, yDiff);
   }
 
@@ -181,6 +207,7 @@ function App() {
     stageRef.current.draw()
   }
 
+  // TODO make points move and scale with the overall image
   function renderPointAt(x, y, color) {
     let newPoint = new Konva.Circle({
       x: x,
@@ -190,6 +217,7 @@ function App() {
     })
     layerRef.current.add(newPoint)
     stageRef.current.draw()
+    return newPoint;
   }
 
   async function fetchPoints() {
@@ -290,15 +318,15 @@ function App() {
         y: 50
       });
       activeImage.current.on("click", (e) =>{
-        renderPointAt(e.evt.layerX, e.evt.layerY, 'red')
-
-        console.log(point1Pos.current)
-        if (point1Pos.current.x == 0) { // TODO have a better way of checking if not set, also let people replace points if they miss
-          point1Pos.current = {x: e.evt.layerX, y: e.evt.layerY}
+      
+        if (point1.current == null) {
+          point1.current = {x: e.evt.layerX, y: e.evt.layerY}
           console.log("Scaling Point 1 @ ", e.evt.layerX, e.evt.layerY)
-        } else {
-          point2Pos.current = {x: e.evt.layerX, y: e.evt.layerY}
+          point1.current = renderPointAt(e.evt.layerX, e.evt.layerY, 'red')
+        } else if (point2.current == null)  {
+          point2.current = {x: e.evt.layerX, y: e.evt.layerY}
           console.log("Scaling Point 2 @ ", e.evt.layerX, e.evt.layerY)
+          point2.current = renderPointAt(e.evt.layerX, e.evt.layerY, 'red')
         }
       });
       layerRef.current.add(activeImage.current)
@@ -465,17 +493,38 @@ function App() {
     }
   };
 
+  function goBack(fromState) {
+    console.log("test")
+    let currentIndex = stepToOrder[fromState]
+    let prevState = orderToStep[currentIndex - 1]
+    // Override to not go to "processing" window
+    prevState = prevState == "process" ? "scaleSuture" : prevState
+    return function() {
+      wipeLayer()
+      changePanel(prevState)
+    }
+  }
+
+  // Add any specific panel switch logic here.
   async function changePanel(toState) {
-    setActivePanel(toState)
+    if (toState == "uploadImage") {
+      setActivePanel("uploadImage")
+    }
+    if (toState == "locateWound") {
+      setActivePanel("locateWound")
+    }
     if (toState == "scaleSuture") {
+      setActivePanel("scaleSuture")
+      resetSuturePointLocations()
       addClickableArea()
     }
-    if (toState == "process") {
+    if (toState == "process" && point1.current != null && point2.current != null) {
+      setActivePanel("process")
       await fetchPoints()
-      console.log("Results are in!")
       changePanel("results")
     }
     if (toState == "results") {
+      setActivePanel("results")
       showFinalResult()
       console.log("Showing final results.")
     }
