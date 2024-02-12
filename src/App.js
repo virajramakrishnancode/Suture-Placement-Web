@@ -583,6 +583,10 @@ function App() {
         <button className="beginButton" onClick={prepareStage}>Begin</button>
         <br/>
         <a href="https://autolab.berkeley.edu/" target="_blank"><img style={{position: "fixed", bottom:"0px", left:"0px"}} src={logo}></img></a>
+        <a href="https://www.ocf.berkeley.edu">
+        <img src="http://www.ocf.berkeley.edu/hosting-logos/ocf-hosted-penguin.svg"
+          alt="Hosted by the OCF" style={{position: "fixed", bottom:"0px", right:"0px", border: "0"}} />
+        </a>
       </div> : null }
       <div className="body" style={{ width : '1920px', height:'1080px'}}>
         <div className="sideinfo">
