@@ -1,17 +1,16 @@
 import './App.css';
 import React, { useState, useRef, useEffect } from 'react';
-import active from './images/active.svg';
-import done from './images/done.svg';
-import inactive from './images/inactive.svg';
-import upload from './images/upload.svg';
-import angleIcon from './images/angle-icon.svg';
+import active from './~autolabsuture/images/active.svg';
+import done from './~autolabsuture/images/done.svg';
+import inactive from './~autolabsuture/images/inactive.svg';
+import upload from './~autolabsuture/images/upload.svg';
+import angleIcon from './~autolabsuture/images/angle-icon.svg';
 import { ThemeContext } from '@mui/styled-engine';
 import { Stage, Layer } from 'react-konva';
 import useImage from 'use-image';
 import Konva from 'konva';
 import { render } from '@testing-library/react';
-import logo from './images/logo.png';
-
+import logo from './~autolabsuture/images/logo.png';
 function App() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [points, setPoints] = useState([]);
@@ -283,7 +282,8 @@ function App() {
       sutureLength: sutureLength,
       imgPath: imgPath
     };
-    const response = await fetch('http://localhost:5000/get_suture_placement', {
+    const response = await fetch('https://autolabsuture.apphost.ocf.berkeley.edu/get_suture_placement', {
+      mode: 'cors',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -371,7 +371,7 @@ function App() {
       console.log(stageRef)
       stageRef.current.draw();  
     }
-    imageObj.src = require('./images/scale.png');
+    imageObj.src = require('./~autolabsuture/images/scale.png');
 
     // Updates position of handle and its icon.
     // There's probably some kind of grouping / container stuff that we can do to update the icon's position automatically.
@@ -578,7 +578,7 @@ function App() {
       { showCover ? <div style={{paddingTop:"40px", textAlign:"center"}} className="cover_panel">
         <text className="rainbow_text">Extending Automated Suture Placing to 3D</text>
         <br/>
-        <h4 style={{paddingTop:"40px", paddingBottom:"40px",fontSize:"30px"}}>Viraj Ramakrishnan, Harshika Jalan, Miller Hollinger, Harsha Polavaram, Julia Isaac, Hansoul Kim, Aviv Adler, Prof. Ken Goldberg </h4>
+        <h4 style={{paddingTop:"40px", paddingBottom:"40px",fontSize:"30px"}}>Viraj Ramakrishnan, Harshika Jalan, Miller Hollinger, Harsha Polavaram, Julia Isaac, Hansoul Kim, Aviv Adler, Professor Ken Goldberg </h4>
         <br/>
         <button className="beginButton" onClick={prepareStage}>Begin</button>
         <br/>
