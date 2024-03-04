@@ -43,6 +43,7 @@ function App() {
   const finalPoints = useRef(null);
 
   const activeImage = useRef(null);
+  const activeImageBase64 = useRef(null);
 
   const stageRef = useRef(null);
   const layerRef = useRef(null);
@@ -193,7 +194,7 @@ function App() {
   }
 
   async function fetchPoints() {
-    finalPoints.current = await getResultPointsFor(recordedRectPos.current, extrapolateSutureLength(), savedImage.name);
+    finalPoints.current = await getResultPointsFor(recordedRectPos.current, extrapolateSutureLength(), savedImage.name, activeImageBase64.current);
   }
 
   function showFinalResult() {
@@ -249,13 +250,14 @@ function App() {
     img.src = url;
   }
 
-  async function getResultPointsFor(rectData, sutureLength, imgPath) {
+  async function getResultPointsFor(rectData, sutureLength, imgPath, imgBase64) {
     const requestData = {
       rectData: rectData,
       sutureLength: sutureLength,
-      imgPath: imgPath
+      imgPath: imgPath,
+      imgBase64: imgBase64
     };
-    const response = await fetch('http://localhost:5000/get_suture_placement', {
+    const response = await fetch('https://suture.berkeleyautomation.net/get_suture_placement', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -397,12 +399,33 @@ function App() {
     stageRef.current.draw();
   }
 
+  // Function from https://stackoverflow.com/questions/6150289/how-can-i-convert-an-image-into-base64-string-using-javascript
+  function toDataURL(url, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.onload = function() {
+      var reader = new FileReader();
+      reader.onloadend = function() {
+        callback(reader.result);
+      }
+      reader.readAsDataURL(xhr.response);
+    };
+    xhr.open('GET', url);
+    xhr.responseType = 'blob';
+    xhr.send();
+  }
+
   const handleImageUpload = (event) => {
     var URL = window.webkitURL || window.URL;
     var url = URL.createObjectURL(event.target.files[0]);
     setSavedImage(event.target.files[0])
     var img = new Image();
     img.src = url;
+
+    // Convert to base64
+    toDataURL(url, (result) => {
+      activeImageBase64.current = result;
+      console.log(activeImageBase64.current)
+    })
 
     // edit this stuff
     img.onload = function() {
